@@ -57,7 +57,9 @@ writeFileSync(
       dependencies: {
         "drizzle-kit": "^0.31.9",
         "drizzle-orm": "^0.45.1",
+        "drizzle-zod": "^0.7.1",
         pg: "^8.20.0",
+        zod: "^3.25.76",
       },
     },
     null,

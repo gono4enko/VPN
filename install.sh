@@ -293,7 +293,9 @@ else
   "dependencies": {
     "drizzle-kit": "^0.31.9",
     "drizzle-orm": "^0.45.1",
-    "pg": "^8.20.0"
+    "drizzle-zod": "^0.7.1",
+    "pg": "^8.20.0",
+    "zod": "^3.25.76"
   }
 }
 PKGJSON
@@ -351,9 +353,9 @@ set -a; source .env; set +a
 
 npm install --production 2>/dev/null || pnpm install 2>/dev/null || true
 
-npx drizzle-kit push --config ./drizzle.config.ts 2>/dev/null && ok "Схема применена" || {
+npx drizzle-kit push --config ./drizzle.config.ts --force && ok "Схема применена" || {
   warn "drizzle-kit push не удался, повторная попытка..."
-  npx drizzle-kit push --config ./drizzle.config.ts --force 2>/dev/null && ok "Схема применена (force)" || warn "Не удалось применить схему — запустите вручную: cd $INSTALL_DIR/deploy && npx drizzle-kit push"
+  npx drizzle-kit push --config ./drizzle.config.ts --force 2>&1 || warn "Не удалось применить схему — запустите вручную: cd $INSTALL_DIR/deploy && npx drizzle-kit push"
 }
 
 cd "$INSTALL_DIR"
