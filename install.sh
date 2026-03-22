@@ -204,21 +204,31 @@ cd "$INSTALL_DIR"
 
 info "Установка зависимостей..."
 rm -f pnpm-lock.yaml
+rm -rf node_modules artifacts/*/node_modules lib/*/node_modules
 
-if [ "$OS" = "darwin" ] && [ "$ARCH" = "arm64" ]; then
-  echo "supportedArchitectures:" >> .npmrc
-  echo "  os:" >> .npmrc
-  echo "    - current" >> .npmrc
-  echo "  cpu:" >> .npmrc
-  echo "    - current" >> .npmrc
-fi
+sed -i.bak '/"@replit\/connectors-sdk"/d' package.json && rm -f package.json.bak
+sed -i.bak '/"@replit\/vite-plugin-cartographer"/d; /"@replit\/vite-plugin-dev-banner"/d; /"@replit\/vite-plugin-runtime-error-modal"/d' artifacts/vpn-panel/package.json && rm -f artifacts/vpn-panel/package.json.bak
 
 pnpm install
 
-if [ "$OS" = "darwin" ] && [ "$ARCH" = "arm64" ]; then
-  info "Установка нативных зависимостей для darwin-arm64..."
-  pnpm add -D @rollup/rollup-darwin-arm64 --filter @workspace/vpn-panel 2>/dev/null || true
-  pnpm add -D @esbuild/darwin-arm64 --filter @workspace/api-server 2>/dev/null || true
+ROLLUP_PKG_DIR="$(find node_modules/.pnpm -maxdepth 1 -type d -name 'rollup@*' 2>/dev/null | head -1)/node_modules/rollup"
+if [ -d "$ROLLUP_PKG_DIR" ]; then
+  ROLLUP_VER="$(node -e "console.log(require('$ROLLUP_PKG_DIR/package.json').version)" 2>/dev/null || echo "")"
+  PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
+  if [ -n "$ROLLUP_VER" ] && [ ! -d "$ROLLUP_PKG_DIR/../@rollup/rollup-${PLATFORM}" ]; then
+    info "Установка @rollup/rollup-${PLATFORM}@${ROLLUP_VER}..."
+    TMPROLLUP=$(mktemp -d)
+    cd "$TMPROLLUP"
+    npm init -y --silent 2>/dev/null
+    npm install "@rollup/rollup-${PLATFORM}@${ROLLUP_VER}" --no-save 2>/dev/null
+    if [ -d "node_modules/@rollup/rollup-${PLATFORM}" ]; then
+      mkdir -p "$ROLLUP_PKG_DIR/../@rollup"
+      cp -r "node_modules/@rollup/rollup-${PLATFORM}" "$ROLLUP_PKG_DIR/../@rollup/"
+      ok "@rollup/rollup-${PLATFORM} установлен"
+    fi
+    cd "$INSTALL_DIR"
+    rm -rf "$TMPROLLUP"
+  fi
 fi
 
 ok "Зависимости установлены"
