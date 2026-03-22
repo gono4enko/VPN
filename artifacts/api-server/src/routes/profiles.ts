@@ -140,12 +140,39 @@ router.post("/profiles/import-sub", authMiddleware, async (req, res): Promise<vo
       res.status(400).json({ error: "Only HTTP(S) URLs are allowed" });
       return;
     }
-    const blockedHosts = ["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]", "169.254.169.254", "metadata.google.internal"];
-    if (blockedHosts.some(h => subUrl.hostname === h || subUrl.hostname.endsWith(".internal") || subUrl.hostname.endsWith(".local"))) {
+    const hostname = subUrl.hostname.replace(/^\[|\]$/g, "");
+    const isPrivateIp = (ip: string): boolean => {
+      if (/^127\./.test(ip)) return true;
+      if (/^10\./.test(ip)) return true;
+      if (/^172\.(1[6-9]|2\d|3[01])\./.test(ip)) return true;
+      if (/^192\.168\./.test(ip)) return true;
+      if (/^169\.254\./.test(ip)) return true;
+      if (/^0\./.test(ip) || ip === "0.0.0.0") return true;
+      if (ip === "::1" || ip === "::") return true;
+      if (/^f[cd]/i.test(ip)) return true;
+      if (/^fe80/i.test(ip)) return true;
+      return false;
+    };
+    if (isPrivateIp(hostname) ||
+        hostname === "localhost" ||
+        hostname.endsWith(".internal") ||
+        hostname.endsWith(".local") ||
+        hostname.endsWith(".localhost")) {
       res.status(400).json({ error: "Internal/private URLs are not allowed" });
       return;
     }
-    const response = await fetch(parsed.data.subscriptionUrl);
+    const dns = await import("node:dns");
+    const { resolve4, resolve6 } = dns.promises;
+    try {
+      const ipv4s = await resolve4(hostname).catch(() => [] as string[]);
+      const ipv6s = await resolve6(hostname).catch(() => [] as string[]);
+      const allIps = [...ipv4s, ...ipv6s];
+      if (allIps.some(isPrivateIp)) {
+        res.status(400).json({ error: "URL resolves to a private/internal IP" });
+        return;
+      }
+    } catch {}
+    const response = await fetch(parsed.data.subscriptionUrl, { redirect: "error" });
     const text = await response.text();
     const decoded = Buffer.from(text, "base64").toString("utf-8");
     const lines = decoded.split("\n").filter((l) => l.trim().startsWith("vless://"));

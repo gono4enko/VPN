@@ -5,7 +5,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string) => void;
   logout: () => void;
-  authOpts: Record<string, any>;
+  authOpts: Record<string, never>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);

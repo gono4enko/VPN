@@ -12,7 +12,7 @@ import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ component: Component }: { component: React.ComponentType<any> }) {
+function ProtectedRoute({ component: Component }: { component: React.ComponentType<Record<string, never>> }) {
   const { token } = useAuth();
   const [, setLocation] = useLocation();
 
