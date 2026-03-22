@@ -12,4 +12,8 @@ export interface ClusterStats {
   totalClients: number;
   avgPing?: number | null;
   totalBandwidth: number;
+  totalNodes: number;
+  onlineNodes: number;
+  /** @nullable */
+  lastSyncAt?: string | null;
 }

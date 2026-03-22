@@ -999,48 +999,200 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ClusterStats"
-  /cluster/sync/trigger:
+  /cluster/nodes:
+    get:
+      operationId: listClusterNodes
+      tags: [cluster]
+      summary: List all peer nodes in the cluster
+      responses:
+        "200":
+          description: Node list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClusterNode"
     post:
-      operationId: triggerClusterSync
+      operationId: addClusterNode
       tags: [cluster]
-      summary: Manually trigger sync with all peer nodes
+      summary: Register a new peer node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddClusterNodeRequest"
       responses:
-        "200":
-          description: Sync result
+        "201":
+          description: Node registered
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SyncTriggerResult"
-  /cluster/failover-urls:
-    get:
-      operationId: getFailoverUrls
+                $ref: "#/components/schemas/ClusterNode"
+  /cluster/nodes/{id}:
+    delete:
+      operationId: removeClusterNode
       tags: [cluster]
-      summary: Get multi-server failover VLESS URLs for all users
-      responses:
-        "200":
-          description: Failover URLs
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FailoverUrlsResponse"
-  /cluster/failover-urls/{userId}:
-    get:
-      operationId: getFailoverUrlsForUser
-      tags: [cluster]
-      summary: Get multi-server failover VLESS URLs for a specific user
+      summary: Remove a peer node from the cluster
       parameters:
-        - name: userId
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Node removed
+  /cluster/nodes/{id}/ping:
+    get:
+      operationId: pingClusterNode
+      tags: [cluster]
+      summary: Health-check a peer node
+      parameters:
+        - name: id
           in: path
           required: true
           schema:
             type: integer
       responses:
         "200":
-          description: Failover URLs for user
+          description: Ping result
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UserFailoverUrls"
+                $ref: "#/components/schemas/ClusterNode"
+  /cluster/nodes/{id}/sync:
+    post:
+      operationId: syncClusterNode
+      tags: [cluster]
+      summary: Trigger sync with a specific peer node
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncResult"
+  /cluster/sync/status:
+    get:
+      operationId: getClusterSyncStatus
+      tags: [cluster]
+      summary: Get sync status across all peer nodes
+      responses:
+        "200":
+          description: Sync status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterSyncStatus"
+  /cluster/heartbeat:
+    post:
+      operationId: clusterHeartbeat
+      tags: [cluster]
+      summary: Receive heartbeat from a peer node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeartbeatRequest"
+      responses:
+        "200":
+          description: Heartbeat acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeartbeatResponse"
+  /cluster/sync/push:
+    post:
+      operationId: clusterSyncPush
+      tags: [cluster]
+      summary: Receive sync data from a peer node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncPushRequest"
+      responses:
+        "200":
+          description: Sync data accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncPushResponse"
+  /cluster/sync/pull:
+    post:
+      operationId: clusterSyncPull
+      tags: [cluster]
+      summary: Request sync data from this node
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SyncPullRequest"
+      responses:
+        "200":
+          description: Sync data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncPullResponse"
+  /cluster/config:
+    get:
+      operationId: getClusterConfig
+      tags: [cluster]
+      summary: Get cluster configuration for this node
+      responses:
+        "200":
+          description: Cluster config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterConfig"
+    put:
+      operationId: updateClusterConfig
+      tags: [cluster]
+      summary: Update cluster configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClusterConfigRequest"
+      responses:
+        "200":
+          description: Config updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterConfig"
+  /users/{id}/multi-vless:
+    get:
+      operationId: getUserMultiVless
+      tags: [users]
+      summary: Get multi-server VLESS URLs for a user (failover endpoints)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Multi-server VLESS URLs and QR code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MultiVlessResponse"
 components:
   schemas:
     HealthStatus:
@@ -1644,65 +1796,341 @@ components:
           nullable: true
         totalBandwidth:
           type: number
+        totalNodes:
+          type: integer
+        onlineNodes:
+          type: integer
+        lastSyncAt:
+          type: ["string", "null"]
       required:
         - totalServers
         - onlineServers
         - totalClients
         - totalBandwidth
-    SyncTriggerResult:
+        - totalNodes
+        - onlineNodes
+    ClusterNode:
       type: object
       properties:
+        id:
+          type: integer
+        nodeId:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        port:
+          type: integer
+        apiPort:
+          type: integer
         status:
           type: string
-        synced:
+          enum: [online, offline, degraded]
+        latency:
           type: integer
-        errors:
+          nullable: true
+        lastSeen:
+          type: ["string", "null"]
+        lastSyncAt:
+          type: ["string", "null"]
+        syncStatus:
+          type: string
+          enum: [synced, pending, error]
+        failCount:
           type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
       required:
+        - id
+        - nodeId
+        - name
+        - address
+        - port
+        - apiPort
         - status
-        - synced
-        - errors
-    UserFailoverUrls:
+        - syncStatus
+        - failCount
+        - createdAt
+        - updatedAt
+    AddClusterNodeRequest:
       type: object
       properties:
-        userId:
-          type: integer
-        userName:
+        name:
           type: string
-        urls:
-          type: array
-          items:
-            type: string
-        combined:
+        address:
+          type: string
+        port:
+          type: integer
+          default: 443
+        apiPort:
+          type: integer
+          default: 3000
+        clusterSecret:
           type: string
       required:
-        - userId
-        - userName
-        - urls
-        - combined
-    FailoverUrlsResponse:
+        - name
+        - address
+        - clusterSecret
+    SyncResult:
       type: object
       properties:
-        users:
+        nodeId:
+          type: string
+        pushed:
+          type: integer
+        pulled:
+          type: integer
+        conflicts:
+          type: integer
+        message:
+          type: string
+      required:
+        - nodeId
+        - pushed
+        - pulled
+        - conflicts
+        - message
+    ClusterSyncStatus:
+      type: object
+      properties:
+        localNodeId:
+          type: string
+        nodes:
           type: array
           items:
             type: object
             properties:
-              userId:
-                type: integer
-              userName:
+              nodeId:
                 type: string
-              urlCount:
+              name:
+                type: string
+              status:
+                type: string
+              lastSyncAt:
+                type: ["string", "null"]
+              syncStatus:
+                type: string
+              pendingChanges:
                 type: integer
-              combined:
+            required:
+              - nodeId
+              - name
+              - status
+              - syncStatus
+              - pendingChanges
+        totalPendingChanges:
+          type: integer
+      required:
+        - localNodeId
+        - nodes
+        - totalPendingChanges
+    HeartbeatRequest:
+      type: object
+      properties:
+        nodeId:
+          type: string
+        timestamp:
+          type: string
+        signature:
+          type: string
+        stats:
+          type: object
+          properties:
+            connectedClients:
+              type: integer
+            bandwidthUsed:
+              type: number
+            cpuUsage:
+              type: number
+            memUsage:
+              type: number
+      required:
+        - nodeId
+        - timestamp
+        - signature
+    HeartbeatResponse:
+      type: object
+      properties:
+        acknowledged:
+          type: boolean
+        serverTime:
+          type: string
+        nodeId:
+          type: string
+      required:
+        - acknowledged
+        - serverTime
+        - nodeId
+    SyncPushRequest:
+      type: object
+      properties:
+        nodeId:
+          type: string
+        timestamp:
+          type: string
+        signature:
+          type: string
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              entityType:
+                type: string
+              entityId:
+                type: string
+              action:
+                type: string
+              data:
+                type: object
+              timestamp:
                 type: string
             required:
-              - userId
-              - userName
-              - urlCount
-              - combined
+              - entityType
+              - entityId
+              - action
+              - timestamp
       required:
-        - users
+        - nodeId
+        - timestamp
+        - signature
+        - changes
+    SyncPushResponse:
+      type: object
+      properties:
+        accepted:
+          type: integer
+        rejected:
+          type: integer
+        conflicts:
+          type: integer
+      required:
+        - accepted
+        - rejected
+        - conflicts
+    SyncPullRequest:
+      type: object
+      properties:
+        nodeId:
+          type: string
+        timestamp:
+          type: string
+        signature:
+          type: string
+        since:
+          type: string
+      required:
+        - nodeId
+        - timestamp
+        - signature
+        - since
+    SyncPullResponse:
+      type: object
+      properties:
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              entityType:
+                type: string
+              entityId:
+                type: string
+              action:
+                type: string
+              data:
+                type: object
+              timestamp:
+                type: string
+              sourceNodeId:
+                type: string
+            required:
+              - entityType
+              - entityId
+              - action
+              - timestamp
+              - sourceNodeId
+        serverTime:
+          type: string
+      required:
+        - changes
+        - serverTime
+    ClusterConfig:
+      type: object
+      properties:
+        localNodeId:
+          type: string
+        localNodeName:
+          type: string
+        clusterEnabled:
+          type: boolean
+        syncIntervalSeconds:
+          type: integer
+        heartbeatIntervalSeconds:
+          type: integer
+        autoSync:
+          type: boolean
+      required:
+        - localNodeId
+        - localNodeName
+        - clusterEnabled
+        - syncIntervalSeconds
+        - heartbeatIntervalSeconds
+        - autoSync
+    UpdateClusterConfigRequest:
+      type: object
+      properties:
+        localNodeName:
+          type: string
+        clusterEnabled:
+          type: boolean
+        syncIntervalSeconds:
+          type: integer
+        heartbeatIntervalSeconds:
+          type: integer
+        autoSync:
+          type: boolean
+    MultiVlessResponse:
+      type: object
+      properties:
+        urls:
+          type: array
+          items:
+            type: object
+            properties:
+              nodeId:
+                type: string
+              nodeName:
+                type: string
+              vlessUrl:
+                type: string
+              address:
+                type: string
+              port:
+                type: integer
+              latency:
+                type: integer
+                nullable: true
+              status:
+                type: string
+            required:
+              - nodeId
+              - nodeName
+              - vlessUrl
+              - address
+              - port
+              - status
+        qrDataUrl:
+          type: string
+        primaryUrl:
+          type: string
+      required:
+        - urls
+        - qrDataUrl
+        - primaryUrl
     MonitoringSettingsResponse:
       type: object
       properties:
@@ -1722,17 +2150,6 @@ components:
         - intervalSeconds
         - pingThresholdMs
         - autoSwitchEnabled
-    UpdateMonitoringSettingsRequest:
-      type: object
-      properties:
-        enabled:
-          type: boolean
-        intervalSeconds:
-          type: integer
-        pingThresholdMs:
-          type: integer
-        autoSwitchEnabled:
-          type: boolean
     MonitoringStatusResponse:
       type: object
       properties:

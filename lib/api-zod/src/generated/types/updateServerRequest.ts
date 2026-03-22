@@ -15,4 +15,6 @@ export interface UpdateServerRequest {
   provider?: string;
   maxClients?: number;
   status?: string;
+  syncUrl?: string;
+  syncSecret?: string;
 }

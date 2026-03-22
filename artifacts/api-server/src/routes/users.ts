@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
 import { db, vpnUsersTable } from "@workspace/db";
 import type { VpnUser } from "@workspace/db/schema";
+import { recordChange } from "../services/sync-engine";
 import {
   CreateUserBody,
   ListUsersResponse,
@@ -68,6 +69,15 @@ router.post("/users", async (req, res): Promise<void> => {
     expiresAt: parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null,
   }).returning();
 
+  await recordChange("vpn_user", user.uuid, "create", {
+    name: user.name,
+    uuid: user.uuid,
+    flow: user.flow,
+    trafficLimit: user.trafficLimit,
+    trafficUsed: user.trafficUsed,
+    status: user.status,
+  });
+
   res.status(201).json(formatUser(user));
 });
 
@@ -95,6 +105,15 @@ router.put("/users/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  await recordChange("vpn_user", user.uuid, "update", {
+    name: user.name,
+    uuid: user.uuid,
+    flow: user.flow,
+    trafficLimit: user.trafficLimit,
+    trafficUsed: user.trafficUsed,
+    status: user.status,
+  });
+
   res.json(UpdateUserResponse.parse(formatUser(user)));
 });
 
@@ -110,6 +129,8 @@ router.delete("/users/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "User not found" });
     return;
   }
+
+  await recordChange("vpn_user", user.uuid, "delete");
 
   res.sendStatus(204);
 });
@@ -127,6 +148,11 @@ router.post("/users/:id/block", async (req, res): Promise<void> => {
     return;
   }
 
+  await recordChange("vpn_user", user.uuid, "update", {
+    name: user.name, uuid: user.uuid, flow: user.flow,
+    trafficLimit: user.trafficLimit, trafficUsed: user.trafficUsed, status: user.status,
+  });
+
   res.json(BlockUserResponse.parse(formatUser(user)));
 });
 
@@ -142,6 +168,11 @@ router.post("/users/:id/unblock", async (req, res): Promise<void> => {
     res.status(404).json({ error: "User not found" });
     return;
   }
+
+  await recordChange("vpn_user", user.uuid, "update", {
+    name: user.name, uuid: user.uuid, flow: user.flow,
+    trafficLimit: user.trafficLimit, trafficUsed: user.trafficUsed, status: user.status,
+  });
 
   res.json(UnblockUserResponse.parse(formatUser(user)));
 });

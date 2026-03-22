@@ -296,30 +296,178 @@ export interface ClusterStats {
   totalClients: number;
   avgPing?: number | null;
   totalBandwidth: number;
+  totalNodes: number;
+  onlineNodes: number;
+  /** @nullable */
+  lastSyncAt?: string | null;
 }
 
-export interface SyncTriggerResult {
+export type ClusterNodeStatus =
+  (typeof ClusterNodeStatus)[keyof typeof ClusterNodeStatus];
+
+export const ClusterNodeStatus = {
+  online: "online",
+  offline: "offline",
+  degraded: "degraded",
+} as const;
+
+export type ClusterNodeSyncStatus =
+  (typeof ClusterNodeSyncStatus)[keyof typeof ClusterNodeSyncStatus];
+
+export const ClusterNodeSyncStatus = {
+  synced: "synced",
+  pending: "pending",
+  error: "error",
+} as const;
+
+export interface ClusterNode {
+  id: number;
+  nodeId: string;
+  name: string;
+  address: string;
+  port: number;
+  apiPort: number;
+  status: ClusterNodeStatus;
+  latency?: number | null;
+  /** @nullable */
+  lastSeen?: string | null;
+  /** @nullable */
+  lastSyncAt?: string | null;
+  syncStatus: ClusterNodeSyncStatus;
+  failCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddClusterNodeRequest {
+  name: string;
+  address: string;
+  port?: number;
+  apiPort?: number;
+  clusterSecret: string;
+}
+
+export interface SyncResult {
+  nodeId: string;
+  pushed: number;
+  pulled: number;
+  conflicts: number;
+  message: string;
+}
+
+export type ClusterSyncStatusNodesItem = {
+  nodeId: string;
+  name: string;
   status: string;
-  synced: number;
-  errors: number;
+  /** @nullable */
+  lastSyncAt?: string | null;
+  syncStatus: string;
+  pendingChanges: number;
+};
+
+export interface ClusterSyncStatus {
+  localNodeId: string;
+  nodes: ClusterSyncStatusNodesItem[];
+  totalPendingChanges: number;
 }
 
-export interface UserFailoverUrls {
-  userId: number;
-  userName: string;
-  urls: string[];
-  combined: string;
+export type HeartbeatRequestStats = {
+  connectedClients?: number;
+  bandwidthUsed?: number;
+  cpuUsage?: number;
+  memUsage?: number;
+};
+
+export interface HeartbeatRequest {
+  nodeId: string;
+  timestamp: string;
+  signature: string;
+  stats?: HeartbeatRequestStats;
 }
 
-export interface FailoverUrlsUserItem {
-  userId: number;
-  userName: string;
-  urlCount: number;
-  combined: string;
+export interface HeartbeatResponse {
+  acknowledged: boolean;
+  serverTime: string;
+  nodeId: string;
 }
 
-export interface FailoverUrlsResponse {
-  users: FailoverUrlsUserItem[];
+export type SyncPushRequestChangesItemData = { [key: string]: unknown };
+
+export type SyncPushRequestChangesItem = {
+  entityType: string;
+  entityId: string;
+  action: string;
+  data?: SyncPushRequestChangesItemData;
+  timestamp: string;
+};
+
+export interface SyncPushRequest {
+  nodeId: string;
+  timestamp: string;
+  signature: string;
+  changes: SyncPushRequestChangesItem[];
+}
+
+export interface SyncPushResponse {
+  accepted: number;
+  rejected: number;
+  conflicts: number;
+}
+
+export interface SyncPullRequest {
+  nodeId: string;
+  timestamp: string;
+  signature: string;
+  since: string;
+}
+
+export type SyncPullResponseChangesItemData = { [key: string]: unknown };
+
+export type SyncPullResponseChangesItem = {
+  entityType: string;
+  entityId: string;
+  action: string;
+  data?: SyncPullResponseChangesItemData;
+  timestamp: string;
+  sourceNodeId: string;
+};
+
+export interface SyncPullResponse {
+  changes: SyncPullResponseChangesItem[];
+  serverTime: string;
+}
+
+export interface ClusterConfig {
+  localNodeId: string;
+  localNodeName: string;
+  clusterEnabled: boolean;
+  syncIntervalSeconds: number;
+  heartbeatIntervalSeconds: number;
+  autoSync: boolean;
+}
+
+export interface UpdateClusterConfigRequest {
+  localNodeName?: string;
+  clusterEnabled?: boolean;
+  syncIntervalSeconds?: number;
+  heartbeatIntervalSeconds?: number;
+  autoSync?: boolean;
+}
+
+export type MultiVlessResponseUrlsItem = {
+  nodeId: string;
+  nodeName: string;
+  vlessUrl: string;
+  address: string;
+  port: number;
+  latency?: number | null;
+  status: string;
+};
+
+export interface MultiVlessResponse {
+  urls: MultiVlessResponseUrlsItem[];
+  qrDataUrl: string;
+  primaryUrl: string;
 }
 
 export interface MonitoringSettingsResponse {
@@ -328,13 +476,6 @@ export interface MonitoringSettingsResponse {
   intervalSeconds: number;
   pingThresholdMs: number;
   autoSwitchEnabled: boolean;
-}
-
-export interface UpdateMonitoringSettingsRequest {
-  enabled?: boolean;
-  intervalSeconds?: number;
-  pingThresholdMs?: number;
-  autoSwitchEnabled?: boolean;
 }
 
 export interface MonitoringStatusResponse {

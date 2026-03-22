@@ -6,14 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface CreateServerRequest {
+export interface AddClusterNodeRequest {
   name: string;
   address: string;
   port?: number;
-  country?: string;
-  countryFlag?: string;
-  provider?: string;
-  maxClients?: number;
-  syncUrl?: string;
-  syncSecret?: string;
+  apiPort?: number;
+  clusterSecret: string;
 }

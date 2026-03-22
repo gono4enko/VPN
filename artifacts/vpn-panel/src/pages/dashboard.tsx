@@ -6,13 +6,20 @@ import {
   useAutoSelectProfile, 
   useRestartServer,
   useGetMonitoringStatus,
+  useGetMonitoringSettings,
+  useStartMonitoring,
+  useStopMonitoring,
+  useCheckNow,
+  useUpdateMonitoringSettings,
+  useGetMonitoringEvents,
+  useGetClusterStats,
   getGetServerStatusQueryKey,
   getGetMonitoringStatusQueryKey,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { CyberCard, CyberButton, CyberBadge } from '@/components/ui/cyber';
 import { CyberTooltip } from '@/components/ui/tooltip';
-import { Activity, Zap, Users, Shield, RefreshCw, Server, Wifi, Radio } from 'lucide-react';
+import { Activity, Zap, Users, Shield, RefreshCw, Server, Wifi, Radio, Eye, EyeOff, Play, Square, Clock, ArrowRightLeft, Globe, Link, HardDrive } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 
@@ -22,6 +29,9 @@ export default function Dashboard() {
   const { data: status, isLoading: statusLoading } = useGetServerStatus({ query: { refetchInterval: 5000 } as never });
   const { data: traffic, isLoading: trafficLoading } = useGetTrafficStats({ query: { refetchInterval: 10000 } as never });
   const { data: monitoringStatus } = useGetMonitoringStatus({ query: { refetchInterval: 5000 } as never });
+  const { data: monitoring } = useGetMonitoringSettings({ query: { refetchInterval: 3000 } as never });
+  const { data: events } = useGetMonitoringEvents({ query: { refetchInterval: 5000 } as never });
+  const { data: clusterStats } = useGetClusterStats({ query: { refetchInterval: 10000 } as never });
   
   const autoSelectMutation = useAutoSelectProfile();
   const restartMutation = useRestartServer();
@@ -174,6 +184,154 @@ export default function Dashboard() {
           </div>
         </CyberCard>
       )}
+
+      {clusterStats && (clusterStats.totalServers > 0 || clusterStats.totalNodes > 0) && (
+        <CyberCard className="p-6 mb-8">
+          <h3 className="text-lg font-display uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
+            <Globe className="w-5 h-5 text-primary" /> Кластер
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase mb-1">Серверы</p>
+              <span className="text-xl font-bold font-display">{clusterStats.totalServers}</span>
+            </div>
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase mb-1">Онлайн</p>
+              <span className="text-xl font-bold font-display text-green-400">{clusterStats.onlineServers}</span>
+            </div>
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase mb-1">Узлы</p>
+              <span className="text-xl font-bold font-display text-cyan-400">{clusterStats.totalNodes}</span>
+            </div>
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase mb-1">Узлы онлайн</p>
+              <span className="text-xl font-bold font-display text-teal-400">{clusterStats.onlineNodes}</span>
+            </div>
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase mb-1">Клиенты</p>
+              <span className="text-xl font-bold font-display text-blue-400">{clusterStats.totalClients}</span>
+            </div>
+            <div>
+              <p className="text-xs font-mono text-muted-foreground uppercase mb-1">Трафик</p>
+              <span className="text-xl font-bold font-display text-purple-400">{clusterStats.totalBandwidth.toFixed(1)} ГБ</span>
+            </div>
+          </div>
+        </CyberCard>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <CyberCard className="p-6 lg:col-span-1">
+          <h3 className="text-lg font-display uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
+            <Eye className="w-5 h-5 text-primary" /> Мониторинг
+          </h3>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-sm text-muted-foreground">Статус</span>
+              <CyberBadge variant={monitoring?.isRunning ? 'green' : 'red'}>
+                {monitoring?.isRunning ? 'Работает' : 'Остановлен'}
+              </CyberBadge>
+            </div>
+
+            <div className="flex gap-2">
+              <CyberButton
+                size="sm"
+                variant={monitoring?.isRunning ? 'destructive' : 'default'}
+                onClick={handleToggleMonitoring}
+                className="flex-1"
+                disabled={startMonMutation.isPending || stopMonMutation.isPending}
+              >
+                {monitoring?.isRunning ? <Square className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
+                {monitoring?.isRunning ? 'Стоп' : 'Старт'}
+              </CyberButton>
+              <CyberTooltip text="Запустить проверку всех узлов прямо сейчас">
+                <CyberButton size="sm" variant="outline" onClick={handleCheckNow} disabled={checkNowMutation.isPending}>
+                  <RefreshCw className={`w-4 h-4 ${checkNowMutation.isPending ? 'animate-spin' : ''}`} />
+                </CyberButton>
+              </CyberTooltip>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-sm text-muted-foreground">Авто-переключение</span>
+              <CyberButton size="sm" variant="outline" onClick={handleToggleAutoSwitch}>
+                {monitoring?.autoSwitch ? <Eye className="w-4 h-4 text-green-400" /> : <EyeOff className="w-4 h-4 text-red-400" />}
+              </CyberButton>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-muted-foreground">Интервал (сек)</span>
+                <div className="flex items-center gap-2">
+                  <CyberInput
+                    type="number"
+                    className="w-20 text-xs"
+                    value={editInterval ?? monitoring?.intervalSeconds ?? 60}
+                    onChange={(e) => setEditInterval(parseInt(e.target.value) || 60)}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs text-muted-foreground">Порог (мс)</span>
+                <div className="flex items-center gap-2">
+                  <CyberInput
+                    type="number"
+                    className="w-20 text-xs"
+                    value={editThreshold ?? monitoring?.pingThresholdMs ?? 500}
+                    onChange={(e) => setEditThreshold(parseInt(e.target.value) || 500)}
+                  />
+                </div>
+              </div>
+              {(editInterval !== null || editThreshold !== null) && (
+                <CyberButton size="sm" className="w-full" onClick={handleSaveSettings} disabled={updateSettingsMutation.isPending}>
+                  Сохранить
+                </CyberButton>
+              )}
+            </div>
+
+            {monitoring?.lastCheckAt && (
+              <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
+                <Clock className="w-3 h-3" />
+                Последняя: {format(new Date(monitoring.lastCheckAt), 'HH:mm:ss')}
+              </div>
+            )}
+          </div>
+        </CyberCard>
+
+        <CyberCard className="p-6 lg:col-span-2">
+          <h3 className="text-lg font-display uppercase tracking-widest font-bold mb-4 flex items-center gap-2">
+            <ArrowRightLeft className="w-5 h-5 text-accent" /> Лог_Переключений
+          </h3>
+
+          {!events?.length ? (
+            <p className="text-muted-foreground font-mono text-sm">Нет событий авто-переключения</p>
+          ) : (
+            <div className="space-y-2 max-h-[250px] overflow-y-auto">
+              {events.slice(0, 10).map((event) => (
+                <div key={event.id} className="flex items-start gap-3 p-3 bg-background/50 border border-primary/10 text-sm font-mono">
+                  <ArrowRightLeft className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {event.fromProfileName && (
+                        <>
+                          <span className="text-red-400">{event.fromProfileName}</span>
+                          <span className="text-muted-foreground">→</span>
+                        </>
+                      )}
+                      <span className="text-green-400">{event.toProfileName}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">{event.reason}</p>
+                    <div className="flex gap-4 text-xs text-muted-foreground/70 mt-1">
+                      {event.pingBefore !== null && event.pingBefore !== undefined && <span>Было: {event.pingBefore}мс</span>}
+                      {event.pingAfter !== null && event.pingAfter !== undefined && <span>Стало: {event.pingAfter}мс</span>}
+                      <span>{format(new Date(event.createdAt), 'dd.MM HH:mm:ss')}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CyberCard>
+      </div>
 
       <CyberCard className="p-6">
         <div className="flex justify-between items-center mb-6">

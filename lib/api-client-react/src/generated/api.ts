@@ -17,17 +17,22 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AddClusterNodeRequest,
   AntiDpiSettings,
   AutoSelectResult,
+  ClusterConfig,
+  ClusterNode,
   ClusterStats,
+  ClusterSyncStatus,
   CreateProfileRequest,
   CreateServerRequest,
   CreateUserRequest,
   DeleteCategoryResult,
   ErrorResponse,
-  FailoverUrlsResponse,
   FingerprintRotationResult,
   HealthStatus,
+  HeartbeatRequest,
+  HeartbeatResponse,
   ImportResult,
   ImportSubRequest,
   ImportUrlRequest,
@@ -37,6 +42,7 @@ import type {
   MessageResponse,
   MonitoringSettingsResponse,
   MonitoringStatusResponse,
+  MultiVlessResponse,
   PingResult,
   PresetImportResult,
   QrResponse,
@@ -51,15 +57,19 @@ import type {
   ServerStatus,
   SpeedtestResult,
   SwitchEvent,
-  SyncTriggerResult,
+  SyncPullRequest,
+  SyncPullResponse,
+  SyncPushRequest,
+  SyncPushResponse,
+  SyncResult,
   TrafficStats,
   TransportFallbackResult,
   UpdateAntiDpiSettingsRequest,
+  UpdateClusterConfigRequest,
   UpdateMonitoringSettingsRequest,
   UpdateProfileRequest,
   UpdateServerRequest,
   UpdateUserRequest,
-  UserFailoverUrls,
   VlessUrlResponse,
   VpnProfile,
   VpnServer,
@@ -4563,160 +4573,280 @@ export function useGetClusterStats<
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-export const getTriggerClusterSyncUrl = () => {
-  return `/api/cluster/sync/trigger`;
+/**
+ * @summary List all peer nodes in the cluster
+ */
+export const getListClusterNodesUrl = () => {
+  return `/api/cluster/nodes`;
 };
 
-export const triggerClusterSync = async (
+export const listClusterNodes = async (
   options?: RequestInit,
-): Promise<SyncTriggerResult> => {
-  return customFetch<SyncTriggerResult>(getTriggerClusterSyncUrl(), {
-    ...options,
-    method: "POST",
-  });
-};
-
-export const getTriggerClusterSyncMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof triggerClusterSync>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof triggerClusterSync>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationOptions = options?.mutation;
-  const requestOptions = options?.request;
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof triggerClusterSync>>,
-    void
-  > = () => {
-    return triggerClusterSync(requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export function useTriggerClusterSync<
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof triggerClusterSync>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof triggerClusterSync>>,
-  TError,
-  void,
-  TContext
-> {
-  const mutationOptions = getTriggerClusterSyncMutationOptions(options);
-  return useMutation(mutationOptions);
-}
-
-export const getGetFailoverUrlsUrl = () => {
-  return `/api/cluster/failover-urls`;
-};
-
-export const getFailoverUrls = async (
-  options?: RequestInit,
-): Promise<FailoverUrlsResponse> => {
-  return customFetch<FailoverUrlsResponse>(getGetFailoverUrlsUrl(), {
+): Promise<ClusterNode[]> => {
+  return customFetch<ClusterNode[]>(getListClusterNodesUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetFailoverUrlsQueryKey = () => {
-  return [`/api/cluster/failover-urls`] as const;
+export const getListClusterNodesQueryKey = () => {
+  return [`/api/cluster/nodes`] as const;
 };
 
-export const getGetFailoverUrlsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getFailoverUrls>>,
+export const getListClusterNodesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClusterNodes>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getFailoverUrls>>,
+    Awaited<ReturnType<typeof listClusterNodes>>,
     TError,
     TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetFailoverUrlsQueryKey();
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getFailoverUrls>>> = ({
-    signal,
-  }) => getFailoverUrls({ signal, ...requestOptions });
+  const queryKey = queryOptions?.queryKey ?? getListClusterNodesQueryKey();
 
-  return {
-    queryKey,
-    queryFn,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getFailoverUrls>>,
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listClusterNodes>>
+  > = ({ signal }) => listClusterNodes({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listClusterNodes>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export function useGetFailoverUrls<
-  TData = Awaited<ReturnType<typeof getFailoverUrls>>,
+export type ListClusterNodesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listClusterNodes>>
+>;
+export type ListClusterNodesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all peer nodes in the cluster
+ */
+
+export function useListClusterNodes<
+  TData = Awaited<ReturnType<typeof listClusterNodes>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getFailoverUrls>>,
+    Awaited<ReturnType<typeof listClusterNodes>>,
     TError,
     TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetFailoverUrlsQueryOptions(options);
+  const queryOptions = getListClusterNodesQueryOptions(options);
+
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
   };
+
   return { ...query, queryKey: queryOptions.queryKey };
 }
 
-export const getGetFailoverUrlsForUserUrl = (userId: number) => {
-  return `/api/cluster/failover-urls/${userId}`;
+/**
+ * @summary Register a new peer node
+ */
+export const getAddClusterNodeUrl = () => {
+  return `/api/cluster/nodes`;
 };
 
-export const getFailoverUrlsForUser = async (
-  userId: number,
+export const addClusterNode = async (
+  addClusterNodeRequest: AddClusterNodeRequest,
   options?: RequestInit,
-): Promise<UserFailoverUrls> => {
-  return customFetch<UserFailoverUrls>(getGetFailoverUrlsForUserUrl(userId), {
+): Promise<ClusterNode> => {
+  return customFetch<ClusterNode>(getAddClusterNodeUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addClusterNodeRequest),
+  });
+};
+
+export const getAddClusterNodeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addClusterNode>>,
+    TError,
+    { data: BodyType<AddClusterNodeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addClusterNode>>,
+  TError,
+  { data: BodyType<AddClusterNodeRequest> },
+  TContext
+> => {
+  const mutationKey = ["addClusterNode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addClusterNode>>,
+    { data: BodyType<AddClusterNodeRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return addClusterNode(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddClusterNodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addClusterNode>>
+>;
+export type AddClusterNodeMutationBody = BodyType<AddClusterNodeRequest>;
+export type AddClusterNodeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Register a new peer node
+ */
+export const useAddClusterNode = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addClusterNode>>,
+    TError,
+    { data: BodyType<AddClusterNodeRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addClusterNode>>,
+  TError,
+  { data: BodyType<AddClusterNodeRequest> },
+  TContext
+> => {
+  return useMutation(getAddClusterNodeMutationOptions(options));
+};
+
+/**
+ * @summary Remove a peer node from the cluster
+ */
+export const getRemoveClusterNodeUrl = (id: number) => {
+  return `/api/cluster/nodes/${id}`;
+};
+
+export const removeClusterNode = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getRemoveClusterNodeUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRemoveClusterNodeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeClusterNode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeClusterNode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["removeClusterNode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeClusterNode>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return removeClusterNode(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveClusterNodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeClusterNode>>
+>;
+
+export type RemoveClusterNodeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove a peer node from the cluster
+ */
+export const useRemoveClusterNode = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeClusterNode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeClusterNode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getRemoveClusterNodeMutationOptions(options));
+};
+
+/**
+ * @summary Health-check a peer node
+ */
+export const getPingClusterNodeUrl = (id: number) => {
+  return `/api/cluster/nodes/${id}/ping`;
+};
+
+export const pingClusterNode = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ClusterNode> => {
+  return customFetch<ClusterNode>(getPingClusterNodeUrl(id), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetFailoverUrlsForUserQueryKey = (userId: number) => {
-  return [`/api/cluster/failover-urls/${userId}`] as const;
+export const getPingClusterNodeQueryKey = (id: number) => {
+  return [`/api/cluster/nodes/${id}/ping`] as const;
 };
 
-export const getGetFailoverUrlsForUserQueryOptions = <
-  TData = Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+export const getPingClusterNodeQueryOptions = <
+  TData = Awaited<ReturnType<typeof pingClusterNode>>,
   TError = ErrorType<unknown>,
 >(
-  userId: number,
+  id: number,
   options?: {
     query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+      Awaited<ReturnType<typeof pingClusterNode>>,
       TError,
       TData
     >;
@@ -4724,43 +4854,719 @@ export const getGetFailoverUrlsForUserQueryOptions = <
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey =
-    queryOptions?.queryKey ?? getGetFailoverUrlsForUserQueryKey(userId);
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getFailoverUrlsForUser>>
-  > = ({ signal }) =>
-    getFailoverUrlsForUser(userId, { signal, ...requestOptions });
+  const queryKey = queryOptions?.queryKey ?? getPingClusterNodeQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof pingClusterNode>>> = ({
+    signal,
+  }) => pingClusterNode(id, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!userId,
+    enabled: !!id,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+    Awaited<ReturnType<typeof pingClusterNode>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export function useGetFailoverUrlsForUser<
-  TData = Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+export type PingClusterNodeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof pingClusterNode>>
+>;
+export type PingClusterNodeQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Health-check a peer node
+ */
+
+export function usePingClusterNode<
+  TData = Awaited<ReturnType<typeof pingClusterNode>>,
   TError = ErrorType<unknown>,
 >(
-  userId: number,
+  id: number,
   options?: {
     query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+      Awaited<ReturnType<typeof pingClusterNode>>,
       TError,
       TData
     >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetFailoverUrlsForUserQueryOptions(userId, options);
+  const queryOptions = getPingClusterNodeQueryOptions(id, options);
+
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
   };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Trigger sync with a specific peer node
+ */
+export const getSyncClusterNodeUrl = (id: number) => {
+  return `/api/cluster/nodes/${id}/sync`;
+};
+
+export const syncClusterNode = async (
+  id: number,
+  options?: RequestInit,
+): Promise<SyncResult> => {
+  return customFetch<SyncResult>(getSyncClusterNodeUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getSyncClusterNodeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncClusterNode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof syncClusterNode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["syncClusterNode"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof syncClusterNode>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return syncClusterNode(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SyncClusterNodeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof syncClusterNode>>
+>;
+
+export type SyncClusterNodeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Trigger sync with a specific peer node
+ */
+export const useSyncClusterNode = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof syncClusterNode>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof syncClusterNode>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getSyncClusterNodeMutationOptions(options));
+};
+
+/**
+ * @summary Get sync status across all peer nodes
+ */
+export const getGetClusterSyncStatusUrl = () => {
+  return `/api/cluster/sync/status`;
+};
+
+export const getClusterSyncStatus = async (
+  options?: RequestInit,
+): Promise<ClusterSyncStatus> => {
+  return customFetch<ClusterSyncStatus>(getGetClusterSyncStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetClusterSyncStatusQueryKey = () => {
+  return [`/api/cluster/sync/status`] as const;
+};
+
+export const getGetClusterSyncStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getClusterSyncStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getClusterSyncStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetClusterSyncStatusQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getClusterSyncStatus>>
+  > = ({ signal }) => getClusterSyncStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getClusterSyncStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetClusterSyncStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getClusterSyncStatus>>
+>;
+export type GetClusterSyncStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get sync status across all peer nodes
+ */
+
+export function useGetClusterSyncStatus<
+  TData = Awaited<ReturnType<typeof getClusterSyncStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getClusterSyncStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetClusterSyncStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Receive heartbeat from a peer node
+ */
+export const getClusterHeartbeatUrl = () => {
+  return `/api/cluster/heartbeat`;
+};
+
+export const clusterHeartbeat = async (
+  heartbeatRequest: HeartbeatRequest,
+  options?: RequestInit,
+): Promise<HeartbeatResponse> => {
+  return customFetch<HeartbeatResponse>(getClusterHeartbeatUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(heartbeatRequest),
+  });
+};
+
+export const getClusterHeartbeatMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clusterHeartbeat>>,
+    TError,
+    { data: BodyType<HeartbeatRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clusterHeartbeat>>,
+  TError,
+  { data: BodyType<HeartbeatRequest> },
+  TContext
+> => {
+  const mutationKey = ["clusterHeartbeat"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clusterHeartbeat>>,
+    { data: BodyType<HeartbeatRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return clusterHeartbeat(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClusterHeartbeatMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clusterHeartbeat>>
+>;
+export type ClusterHeartbeatMutationBody = BodyType<HeartbeatRequest>;
+export type ClusterHeartbeatMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Receive heartbeat from a peer node
+ */
+export const useClusterHeartbeat = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clusterHeartbeat>>,
+    TError,
+    { data: BodyType<HeartbeatRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clusterHeartbeat>>,
+  TError,
+  { data: BodyType<HeartbeatRequest> },
+  TContext
+> => {
+  return useMutation(getClusterHeartbeatMutationOptions(options));
+};
+
+/**
+ * @summary Receive sync data from a peer node
+ */
+export const getClusterSyncPushUrl = () => {
+  return `/api/cluster/sync/push`;
+};
+
+export const clusterSyncPush = async (
+  syncPushRequest: SyncPushRequest,
+  options?: RequestInit,
+): Promise<SyncPushResponse> => {
+  return customFetch<SyncPushResponse>(getClusterSyncPushUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(syncPushRequest),
+  });
+};
+
+export const getClusterSyncPushMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clusterSyncPush>>,
+    TError,
+    { data: BodyType<SyncPushRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clusterSyncPush>>,
+  TError,
+  { data: BodyType<SyncPushRequest> },
+  TContext
+> => {
+  const mutationKey = ["clusterSyncPush"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clusterSyncPush>>,
+    { data: BodyType<SyncPushRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return clusterSyncPush(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClusterSyncPushMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clusterSyncPush>>
+>;
+export type ClusterSyncPushMutationBody = BodyType<SyncPushRequest>;
+export type ClusterSyncPushMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Receive sync data from a peer node
+ */
+export const useClusterSyncPush = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clusterSyncPush>>,
+    TError,
+    { data: BodyType<SyncPushRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clusterSyncPush>>,
+  TError,
+  { data: BodyType<SyncPushRequest> },
+  TContext
+> => {
+  return useMutation(getClusterSyncPushMutationOptions(options));
+};
+
+/**
+ * @summary Request sync data from this node
+ */
+export const getClusterSyncPullUrl = () => {
+  return `/api/cluster/sync/pull`;
+};
+
+export const clusterSyncPull = async (
+  syncPullRequest: SyncPullRequest,
+  options?: RequestInit,
+): Promise<SyncPullResponse> => {
+  return customFetch<SyncPullResponse>(getClusterSyncPullUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(syncPullRequest),
+  });
+};
+
+export const getClusterSyncPullMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clusterSyncPull>>,
+    TError,
+    { data: BodyType<SyncPullRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clusterSyncPull>>,
+  TError,
+  { data: BodyType<SyncPullRequest> },
+  TContext
+> => {
+  const mutationKey = ["clusterSyncPull"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clusterSyncPull>>,
+    { data: BodyType<SyncPullRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return clusterSyncPull(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClusterSyncPullMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clusterSyncPull>>
+>;
+export type ClusterSyncPullMutationBody = BodyType<SyncPullRequest>;
+export type ClusterSyncPullMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Request sync data from this node
+ */
+export const useClusterSyncPull = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clusterSyncPull>>,
+    TError,
+    { data: BodyType<SyncPullRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clusterSyncPull>>,
+  TError,
+  { data: BodyType<SyncPullRequest> },
+  TContext
+> => {
+  return useMutation(getClusterSyncPullMutationOptions(options));
+};
+
+/**
+ * @summary Get cluster configuration for this node
+ */
+export const getGetClusterConfigUrl = () => {
+  return `/api/cluster/config`;
+};
+
+export const getClusterConfig = async (
+  options?: RequestInit,
+): Promise<ClusterConfig> => {
+  return customFetch<ClusterConfig>(getGetClusterConfigUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetClusterConfigQueryKey = () => {
+  return [`/api/cluster/config`] as const;
+};
+
+export const getGetClusterConfigQueryOptions = <
+  TData = Awaited<ReturnType<typeof getClusterConfig>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getClusterConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetClusterConfigQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getClusterConfig>>
+  > = ({ signal }) => getClusterConfig({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getClusterConfig>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetClusterConfigQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getClusterConfig>>
+>;
+export type GetClusterConfigQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get cluster configuration for this node
+ */
+
+export function useGetClusterConfig<
+  TData = Awaited<ReturnType<typeof getClusterConfig>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getClusterConfig>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetClusterConfigQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update cluster configuration
+ */
+export const getUpdateClusterConfigUrl = () => {
+  return `/api/cluster/config`;
+};
+
+export const updateClusterConfig = async (
+  updateClusterConfigRequest: UpdateClusterConfigRequest,
+  options?: RequestInit,
+): Promise<ClusterConfig> => {
+  return customFetch<ClusterConfig>(getUpdateClusterConfigUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateClusterConfigRequest),
+  });
+};
+
+export const getUpdateClusterConfigMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateClusterConfig>>,
+    TError,
+    { data: BodyType<UpdateClusterConfigRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateClusterConfig>>,
+  TError,
+  { data: BodyType<UpdateClusterConfigRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateClusterConfig"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateClusterConfig>>,
+    { data: BodyType<UpdateClusterConfigRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateClusterConfig(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateClusterConfigMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateClusterConfig>>
+>;
+export type UpdateClusterConfigMutationBody =
+  BodyType<UpdateClusterConfigRequest>;
+export type UpdateClusterConfigMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update cluster configuration
+ */
+export const useUpdateClusterConfig = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateClusterConfig>>,
+    TError,
+    { data: BodyType<UpdateClusterConfigRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateClusterConfig>>,
+  TError,
+  { data: BodyType<UpdateClusterConfigRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateClusterConfigMutationOptions(options));
+};
+
+/**
+ * @summary Get multi-server VLESS URLs for a user (failover endpoints)
+ */
+export const getGetUserMultiVlessUrl = (id: number) => {
+  return `/api/users/${id}/multi-vless`;
+};
+
+export const getUserMultiVless = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MultiVlessResponse> => {
+  return customFetch<MultiVlessResponse>(getGetUserMultiVlessUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetUserMultiVlessQueryKey = (id: number) => {
+  return [`/api/users/${id}/multi-vless`] as const;
+};
+
+export const getGetUserMultiVlessQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUserMultiVless>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserMultiVless>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetUserMultiVlessQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getUserMultiVless>>
+  > = ({ signal }) => getUserMultiVless(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getUserMultiVless>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetUserMultiVlessQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getUserMultiVless>>
+>;
+export type GetUserMultiVlessQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get multi-server VLESS URLs for a user (failover endpoints)
+ */
+
+export function useGetUserMultiVless<
+  TData = Awaited<ReturnType<typeof getUserMultiVless>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getUserMultiVless>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetUserMultiVlessQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
   return { ...query, queryKey: queryOptions.queryKey };
 }

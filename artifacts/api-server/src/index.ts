@@ -2,11 +2,11 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { startMonitor } from "./lib/anti-dpi-monitor";
 import { initMonitoringOnBoot } from "./services/monitoring";
-import { startClusterSync } from "./services/cluster-sync";
+import { startSyncEngine } from "./services/sync-engine";
 import { initRealityKeys } from "./lib/reality-keys";
 
 startMonitor();
-startClusterSync();
+startSyncEngine();
 
 const rawPort = process.env["PORT"];
 

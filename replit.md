@@ -2,51 +2,65 @@
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+This project is a pnpm workspace monorepo using TypeScript, designed for managing VPN services. It provides a robust API server, a React-based VPN control panel, and advanced features for traffic obfuscation and cluster management. The system aims to offer a secure, high-performance, and user-friendly solution for VPN administration, with a focus on evading Deep Packet Inspection (DPI).
 
-## Stack
+**Key Capabilities:**
+- **VPN User and Profile Management:** Create, update, delete, block, and unblock VPN users and profiles.
+- **Traffic Obfuscation (Anti-DPI):** Implement advanced techniques like TLS ClientHello Fragmentation, Multi-Transport Support, Automatic Transport Fallback, and uTLS Fingerprint Rotation.
+- **Cluster Management:** Manage multiple VPN servers, monitor their status, and enable inter-node synchronization.
+- **Routing Rule Management:** Define and manage routing rules for traffic, including presets.
+- **Monitoring and Statistics:** Track traffic usage, server status, and auto-switch events.
+- **Admin Panel:** A React-based UI with a cyberpunk theme for easy administration.
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **API framework**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+## User Preferences
 
-## Structure
+- All UI text is in Russian with cyberpunk-style naming (e.g., "Сеть_Ядро", "Матрица_Пользователей", "Исходящие_Узлы").
+- The VPN panel should feature a dark cyberpunk theme (teal neon on dark navy).
+- Development should be iterative, with clear communication before major changes.
+- Provide detailed explanations for complex architectural decisions.
 
-```text
-artifacts-monorepo/
-├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
-├── lib/                    # Shared libraries
-│   ├── api-spec/           # OpenAPI spec + Orval codegen config
-│   ├── api-client-react/   # Generated React Query hooks
-│   ├── api-zod/            # Generated Zod schemas from OpenAPI
-│   └── db/                 # Drizzle ORM schema + DB connection
-├── scripts/                # Utility scripts (single workspace package)
-│   └── src/                # Individual .ts scripts, run via `pnpm --filter @workspace/scripts run <script>`
-├── pnpm-workspace.yaml     # pnpm workspace (artifacts/*, lib/*, lib/integrations/*, scripts)
-├── tsconfig.base.json      # Shared TS options (composite, bundler resolution, es2022)
-├── tsconfig.json           # Root TS project references
-└── package.json            # Root package with hoisted devDeps
-```
+## System Architecture
 
-## TypeScript & Composite Projects
+The project is structured as a pnpm monorepo, enabling shared libraries and consistent tooling across packages. TypeScript is used throughout, with composite projects to manage dependencies and type-checking efficiently.
 
-Every package extends `tsconfig.base.json` which sets `composite: true`. The root `tsconfig.json` lists all packages as project references. This means:
+**Core Technologies:**
+- **Monorepo Tool:** pnpm workspaces
+- **Node.js:** v24
+- **TypeScript:** v5.9
+- **API Framework:** Express 5
+- **Database:** PostgreSQL with Drizzle ORM
+- **Validation:** Zod (`zod/v4`), `drizzle-zod`
+- **API Codegen:** Orval (from OpenAPI spec)
+- **Build Tool:** esbuild (for CJS bundles)
+- **Frontend Framework:** React + Vite
+- **Routing (Frontend):** wouter v3
+- **State Management (Frontend):** TanStack React Query
 
-- **Always typecheck from the root** — run `pnpm run typecheck` (which runs `tsc --build --emitDeclarationOnly`). This builds the full dependency graph so that cross-package imports resolve correctly. Running `tsc` inside a single package will fail if its dependencies haven't been built yet.
-- **`emitDeclarationOnly`** — we only emit `.d.ts` files during typecheck; actual JS bundling is handled by esbuild/tsx/vite...etc, not `tsc`.
-- **Project references** — when package A depends on package B, A's `tsconfig.json` must list B in its `references` array. `tsc --build` uses this to determine build order and skip up-to-date packages.
+**Architectural Patterns & Design Decisions:**
+- **Modular Monorepo:** Separates concerns into `artifacts` (deployable applications like `api-server`, `vpn-panel`) and `lib` (shared libraries like `api-spec`, `api-client-react`, `api-zod`, `db`).
+- **Type-Safe API:** OpenAPI specification defines API contracts, which are used by Orval to generate type-safe React Query hooks for the frontend (`api-client-react`) and Zod schemas for backend validation (`api-zod`).
+- **Database Abstraction:** Drizzle ORM provides a type-safe interface to PostgreSQL, with schema definitions managed in `lib/db`.
+- **Anti-DPI Architecture:**
+    - **TLS ClientHello Fragmentation:** Implemented at the profile level with configurable parameters.
+    - **Multi-Transport Support & Automatic Fallback:** Profiles can specify multiple transport types (TCP, WebSocket, gRPC, HTTP/2), and a background monitor automatically switches to the next available transport upon connection failures.
+    - **uTLS Fingerprint Rotation:** Automated cycling of TLS fingerprints (Chrome, Firefox, Safari, Edge) at configurable intervals to evade detection.
+    - **Xray Configuration Generation:** Dynamic generation of Xray JSON configurations incorporating anti-DPI features.
+- **Cluster Management:**
+    - Supports multiple `vpn_servers` and `cluster_nodes`.
+    - Inter-node communication for synchronization of data and heartbeats, secured with `CLUSTER_SECRET`.
+    - Synchronization changelog (`sync_changelog`) tracks entity changes across nodes.
+- **UI/UX Design:**
+    - **Cyberpunk Theme:** The `vpn-panel` features a distinct dark cyberpunk aesthetic with teal neon accents.
+    - **Custom UI Components:** Reusable `CyberCard`, `CyberButton`, `CyberBadge`, `Modal`, `CyberInput`, and `CyberTooltip` components ensure thematic consistency.
+    - **Localization:** All UI text is in Russian with thematic naming conventions.
 
-## Root Scripts
+**Feature Specifications:**
+- **API Routes:** Comprehensive set of RESTful endpoints for user, profile, server, routing, monitoring, anti-DPI, and cluster management.
+- **VPN Panel Routes:** `/` (dashboard), `/users`, `/profiles`, `/routing`, `/cluster`, `/settings`. No authentication required for routes.
+- **IP Detection:** Dashboard displays client's public IP using a dedicated API endpoint.
+- **VLESS Defaults:** Generated VLESS URLs default to `happ.su` but are configurable via environment variables.
 
-- `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
-- `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
+## External Dependencies
 
 ## Packages
 
@@ -139,11 +153,18 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - `GET /api/cluster/servers/:id/ping` — ping server
 - `POST /api/cluster/servers/:id/set-primary` — set primary server
 - `GET /api/cluster/stats` — cluster statistics
+- `GET /api/cluster/nodes` — list cluster peer nodes
+- `POST /api/cluster/nodes` — register peer node
+- `DELETE /api/cluster/nodes/:id` — remove peer node
+- `GET /api/cluster/nodes/:id/ping` — health-check peer node
+- `POST /api/cluster/nodes/:id/sync` — trigger sync with specific peer
+- `GET /api/cluster/sync/status` — sync status across all peers
+- `POST /api/cluster/heartbeat` — receive heartbeat from peer (HMAC-protected)
 - `POST /api/cluster/sync/push` — push sync data to peer (HMAC-protected)
 - `POST /api/cluster/sync/pull` — pull sync data from peer (HMAC-protected)
-- `POST /api/cluster/sync/trigger` — manually trigger sync with all peers
-- `GET /api/cluster/failover-urls` — failover URLs for all users (base64 combined VLESS)
-- `GET /api/cluster/failover-urls/:userId` — failover URLs for specific user
+- `GET /api/cluster/config` — get cluster configuration
+- `PUT /api/cluster/config` — update cluster configuration
+- `GET /api/users/:id/multi-vless` — multi-server VLESS URLs with failover
 - `GET /api/routing/rules` — list routing rules
 - `POST /api/routing/rules` — create routing rule (domain/ip/cidr/regexp, direct/proxy/block)
 - `POST /api/routing/rules/batch` — batch import routing rules
@@ -188,25 +209,27 @@ Key files:
 - `vpn_users` — id, uuid, name, status, trafficUsed, trafficLimit, expiresAt, createdAt
 - `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, lastDownloadSpeed, lastCheckAt, isOnline, isActive, transportType, transportPath, transportHost, fragmentEnabled, fragmentLength, fragmentInterval, fingerprintRotation, fingerprintInterval, fingerprintList, lastFingerprintRotation, transportPriority, createdAt
 - `vpn_servers` — id, name, address, port, country, countryFlag, provider, status, lastPing, cpuUsage, memUsage, bandwidthUsed, bandwidthLimit, connectedClients, maxClients, isPrimary, syncUrl, syncSecret, lastSyncAt, syncStatus, createdAt
+- `cluster_nodes` — id, nodeId, name, address, port, apiPort, clusterSecretHash, status, latency, lastSeen, lastSyncAt, syncStatus, failCount, createdAt
+- `sync_changelog` — id, entityType, entityId, action, data (jsonb), sourceNodeId, timestamp, createdAt
 - `routing_rules` — id, ruleType (domain/ip/cidr/regexp), value, action (direct/proxy/block), description, enabled, priority, category, createdAt
 - `monitoring_settings` — id, enabled, intervalSeconds, pingThresholdMs, autoSwitch, lastCheckAt
 - `switch_event_log` — id, fromProfileId, fromProfileName, toProfileId, toProfileName, reason, pingBefore, pingAfter, createdAt
 - `audit_logs` — id, action, details, timestamp
 
-### Cluster Sync Engine
+### Distributed Cluster Sync Engine
 
-The system includes a cluster sync engine for multi-node deployments:
-- **HMAC-SHA256 Auth**: Sync endpoints are protected via `x-cluster-hmac` + `x-cluster-timestamp` headers, 5-min drift tolerance
-- **Sync Service**: 60s interval background sync, last-write-wins merge strategy for users/profiles/routing rules
-- **Manual Trigger**: `POST /api/cluster/sync/trigger` triggers immediate sync with all configured peers
-- **Failover URLs**: Auto-generated combined VLESS URLs sorted by availability (online + lowest ping), base64-encoded for subscription clients
-- **Sync URL Normalization**: `syncUrl` stored as base URL; paths are auto-appended (handles both base URL and full-path inputs)
+The system includes a distributed peer-to-peer cluster mesh for multi-node deployments:
+- **HMAC-SHA256 Auth**: Inter-node endpoints (heartbeat, sync/push, sync/pull) are protected with HMAC signature verification and timestamp window validation (5-min drift tolerance)
+- **Background Sync**: Periodic heartbeat and sync loops with configurable intervals and exponential backoff for failed nodes
+- **Last-Write-Wins**: Conflict resolution compares the latest changelog entry timestamp per entity
+- **Change Recording**: All user CRUD operations automatically record changes to sync_changelog for propagation
+- **Full CRUD Sync**: Users and profiles support create/update/delete replication across nodes
+- **Multi-Server VLESS**: Generates failover VLESS URLs from all online servers and peer nodes
 
 Key files:
-- `artifacts/api-server/src/services/cluster-sync.ts` — Sync engine (collect/apply/trigger)
-- `artifacts/api-server/src/middleware/hmac-auth.ts` — HMAC middleware + signed request helper
-- `artifacts/api-server/src/routes/cluster.ts` — Cluster routes (servers, sync, failover)
-- `artifacts/vpn-panel/src/pages/cluster.tsx` — Cluster UI (servers tab, failover tab, sync button)
+- `artifacts/api-server/src/services/sync-engine.ts` — Sync engine (HMAC auth, heartbeat, push/pull, conflict resolution)
+- `artifacts/api-server/src/routes/cluster.ts` — Cluster routes (servers, nodes, sync, config, multi-VLESS)
+- `artifacts/vpn-panel/src/pages/cluster.tsx` — Cluster UI (3-tab: Servers/Nodes/Config)
 
 ### Required Environment
 
@@ -217,6 +240,9 @@ Key files:
 **Shared env vars (in `.replit`):**
 - `ADMIN_USERNAME` — admin login username (default: `admin`)
 - `DATABASE_URL` — auto-provided by Replit PostgreSQL
+- `CLUSTER_NODE_ID` — unique identifier for this cluster node (auto-generated if not set)
+- `CLUSTER_NODE_NAME` — display name for this node (default: "Local Node")
+- `CLUSTER_SECRET` — shared secret for HMAC authentication between cluster nodes (enables clustering when set)
 
 ### `scripts` (`@workspace/scripts`)
 

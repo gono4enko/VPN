@@ -555,12 +555,7 @@ export const GetMonitoringSettingsResponse = zod.object({
 /**
  * @summary Update monitoring settings
  */
-export const UpdateMonitoringSettingsBody = zod.object({
-  enabled: zod.boolean().optional(),
-  intervalSeconds: zod.number().optional(),
-  pingThresholdMs: zod.number().optional(),
-  autoSwitchEnabled: zod.boolean().optional(),
-});
+export const UpdateMonitoringSettingsBody = zod.unknown();
 
 export const UpdateMonitoringSettingsResponse = zod.object({
   id: zod.number(),
@@ -977,38 +972,232 @@ export const GetClusterStatsResponse = zod.object({
   totalClients: zod.number(),
   avgPing: zod.number().nullish(),
   totalBandwidth: zod.number(),
+  totalNodes: zod.number(),
+  onlineNodes: zod.number(),
+  lastSyncAt: zod.string().nullish(),
 });
 
 /**
- * @summary Trigger cluster sync
+ * @summary List all peer nodes in the cluster
  */
-export const SyncTriggerResult = zod.object({
-  status: zod.string(),
-  synced: zod.number(),
-  errors: zod.number(),
+export const ListClusterNodesResponseItem = zod.object({
+  id: zod.number(),
+  nodeId: zod.string(),
+  name: zod.string(),
+  address: zod.string(),
+  port: zod.number(),
+  apiPort: zod.number(),
+  status: zod.enum(["online", "offline", "degraded"]),
+  latency: zod.number().nullish(),
+  lastSeen: zod.string().nullish(),
+  lastSyncAt: zod.string().nullish(),
+  syncStatus: zod.enum(["synced", "pending", "error"]),
+  failCount: zod.number(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListClusterNodesResponse = zod.array(ListClusterNodesResponseItem);
+
+/**
+ * @summary Register a new peer node
+ */
+export const addClusterNodeBodyPortDefault = 443;
+export const addClusterNodeBodyApiPortDefault = 3000;
+
+export const AddClusterNodeBody = zod.object({
+  name: zod.string(),
+  address: zod.string(),
+  port: zod.number().default(addClusterNodeBodyPortDefault),
+  apiPort: zod.number().default(addClusterNodeBodyApiPortDefault),
+  clusterSecret: zod.string(),
 });
 
 /**
- * @summary Get failover URLs for a user
+ * @summary Remove a peer node from the cluster
  */
-export const GetFailoverUrlsForUserParams = zod.object({
-  userId: zod.coerce.number(),
+export const RemoveClusterNodeParams = zod.object({
+  id: zod.coerce.number(),
 });
 
-export const UserFailoverUrls = zod.object({
-  userId: zod.number(),
-  userName: zod.string(),
-  urls: zod.array(zod.string()),
-  combined: zod.string(),
+/**
+ * @summary Health-check a peer node
+ */
+export const PingClusterNodeParams = zod.object({
+  id: zod.coerce.number(),
 });
 
-export const FailoverUrlsUserItem = zod.object({
-  userId: zod.number(),
-  userName: zod.string(),
-  urlCount: zod.number(),
-  combined: zod.string(),
+export const PingClusterNodeResponse = zod.object({
+  id: zod.number(),
+  nodeId: zod.string(),
+  name: zod.string(),
+  address: zod.string(),
+  port: zod.number(),
+  apiPort: zod.number(),
+  status: zod.enum(["online", "offline", "degraded"]),
+  latency: zod.number().nullish(),
+  lastSeen: zod.string().nullish(),
+  lastSyncAt: zod.string().nullish(),
+  syncStatus: zod.enum(["synced", "pending", "error"]),
+  failCount: zod.number(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
 });
 
-export const FailoverUrlsResponse = zod.object({
-  users: zod.array(FailoverUrlsUserItem),
+/**
+ * @summary Trigger sync with a specific peer node
+ */
+export const SyncClusterNodeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SyncClusterNodeResponse = zod.object({
+  nodeId: zod.string(),
+  pushed: zod.number(),
+  pulled: zod.number(),
+  conflicts: zod.number(),
+  message: zod.string(),
+});
+
+/**
+ * @summary Get sync status across all peer nodes
+ */
+export const GetClusterSyncStatusResponse = zod.object({
+  localNodeId: zod.string(),
+  nodes: zod.array(
+    zod.object({
+      nodeId: zod.string(),
+      name: zod.string(),
+      status: zod.string(),
+      lastSyncAt: zod.string().nullish(),
+      syncStatus: zod.string(),
+      pendingChanges: zod.number(),
+    }),
+  ),
+  totalPendingChanges: zod.number(),
+});
+
+/**
+ * @summary Receive heartbeat from a peer node
+ */
+export const ClusterHeartbeatBody = zod.object({
+  nodeId: zod.string(),
+  timestamp: zod.string(),
+  signature: zod.string(),
+  stats: zod
+    .object({
+      connectedClients: zod.number().optional(),
+      bandwidthUsed: zod.number().optional(),
+      cpuUsage: zod.number().optional(),
+      memUsage: zod.number().optional(),
+    })
+    .optional(),
+});
+
+export const ClusterHeartbeatResponse = zod.object({
+  acknowledged: zod.boolean(),
+  serverTime: zod.string(),
+  nodeId: zod.string(),
+});
+
+/**
+ * @summary Receive sync data from a peer node
+ */
+export const ClusterSyncPushBody = zod.object({
+  nodeId: zod.string(),
+  timestamp: zod.string(),
+  signature: zod.string(),
+  changes: zod.array(
+    zod.object({
+      entityType: zod.string(),
+      entityId: zod.string(),
+      action: zod.string(),
+      data: zod.object({}).passthrough().optional(),
+      timestamp: zod.string(),
+    }),
+  ),
+});
+
+export const ClusterSyncPushResponse = zod.object({
+  accepted: zod.number(),
+  rejected: zod.number(),
+  conflicts: zod.number(),
+});
+
+/**
+ * @summary Request sync data from this node
+ */
+export const ClusterSyncPullBody = zod.object({
+  nodeId: zod.string(),
+  timestamp: zod.string(),
+  signature: zod.string(),
+  since: zod.string(),
+});
+
+export const ClusterSyncPullResponse = zod.object({
+  changes: zod.array(
+    zod.object({
+      entityType: zod.string(),
+      entityId: zod.string(),
+      action: zod.string(),
+      data: zod.object({}).passthrough().optional(),
+      timestamp: zod.string(),
+      sourceNodeId: zod.string(),
+    }),
+  ),
+  serverTime: zod.string(),
+});
+
+/**
+ * @summary Get cluster configuration for this node
+ */
+export const GetClusterConfigResponse = zod.object({
+  localNodeId: zod.string(),
+  localNodeName: zod.string(),
+  clusterEnabled: zod.boolean(),
+  syncIntervalSeconds: zod.number(),
+  heartbeatIntervalSeconds: zod.number(),
+  autoSync: zod.boolean(),
+});
+
+/**
+ * @summary Update cluster configuration
+ */
+export const UpdateClusterConfigBody = zod.object({
+  localNodeName: zod.string().optional(),
+  clusterEnabled: zod.boolean().optional(),
+  syncIntervalSeconds: zod.number().optional(),
+  heartbeatIntervalSeconds: zod.number().optional(),
+  autoSync: zod.boolean().optional(),
+});
+
+export const UpdateClusterConfigResponse = zod.object({
+  localNodeId: zod.string(),
+  localNodeName: zod.string(),
+  clusterEnabled: zod.boolean(),
+  syncIntervalSeconds: zod.number(),
+  heartbeatIntervalSeconds: zod.number(),
+  autoSync: zod.boolean(),
+});
+
+/**
+ * @summary Get multi-server VLESS URLs for a user (failover endpoints)
+ */
+export const GetUserMultiVlessParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetUserMultiVlessResponse = zod.object({
+  urls: zod.array(
+    zod.object({
+      nodeId: zod.string(),
+      nodeName: zod.string(),
+      vlessUrl: zod.string(),
+      address: zod.string(),
+      port: zod.number(),
+      latency: zod.number().nullish(),
+      status: zod.string(),
+    }),
+  ),
+  qrDataUrl: zod.string(),
+  primaryUrl: zod.string(),
 });

@@ -5,3 +5,5 @@ export * from "./monitoring";
 export * from "./audit-logs";
 export * from "./routing-rules";
 export * from "./server-settings";
+export * from "./cluster-nodes";
+export * from "./sync-changelog";

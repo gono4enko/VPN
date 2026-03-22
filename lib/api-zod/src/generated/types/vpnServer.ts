@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { VpnServerStatus } from "./vpnServerStatus";
+import type { VpnServerSyncStatus } from "./vpnServerSyncStatus";
 
 export interface VpnServer {
   id: number;
@@ -24,6 +25,9 @@ export interface VpnServer {
   connectedClients: number;
   maxClients: number;
   isPrimary: boolean;
+  syncUrl?: string | null;
+  syncStatus: VpnServerSyncStatus;
+  lastSyncAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
