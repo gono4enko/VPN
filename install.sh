@@ -135,10 +135,26 @@ if check_command psql; then
   ok "PostgreSQL найден"
   PG_OK=true
 else
-  setup_postgres_hint "$OS"
-  read -rp "Продолжить установку без PostgreSQL? (y/N): " CONTINUE
-  if [[ "$CONTINUE" != "y" && "$CONTINUE" != "Y" ]]; then
-    exit 1
+  for pg_path in /opt/homebrew/opt/postgresql@{17,16,15,14}/bin /usr/local/opt/postgresql@{17,16,15,14}/bin; do
+    if [ -x "$pg_path/psql" ]; then
+      export PATH="$pg_path:$PATH"
+      ok "PostgreSQL найден в $pg_path"
+      PG_OK=true
+      break
+    fi
+  done
+fi
+
+if [ "$PG_OK" = false ]; then
+  if pg_isready &>/dev/null 2>&1 || [ -S /tmp/.s.PGSQL.5432 ] || [ -S /var/run/postgresql/.s.PGSQL.5432 ]; then
+    warn "PostgreSQL запущен, но psql не найден в PATH"
+    PG_OK=true
+  else
+    setup_postgres_hint "$OS"
+    read -rp "Продолжить установку без PostgreSQL? (y/N): " CONTINUE
+    if [[ "$CONTINUE" != "y" && "$CONTINUE" != "Y" ]]; then
+      exit 1
+    fi
   fi
 fi
 
@@ -224,9 +240,16 @@ if [ "$PG_OK" = true ]; then
   read -rp "Создать пользователя и базу данных PostgreSQL? (Y/n): " SETUP_DB
   if [[ "$SETUP_DB" != "n" && "$SETUP_DB" != "N" ]]; then
     DB_PASSWORD="${DB_PASSWORD:-$(grep -E '^DATABASE_URL=' "$INSTALL_DIR/.env" 2>/dev/null | sed -E 's|.*://[^:]+:([^@]+)@.*|\1|' || echo "changeme")}"
-    sudo -u postgres createuser vpn_panel 2>/dev/null || warn "Пользователь vpn_panel уже существует"
-    sudo -u postgres createdb vpn_panel -O vpn_panel 2>/dev/null || warn "База данных vpn_panel уже существует"
-    sudo -u postgres psql -c "ALTER USER vpn_panel PASSWORD '$DB_PASSWORD';" 2>/dev/null || warn "Не удалось установить пароль"
+
+    if [ "$OS" = "darwin" ]; then
+      createuser vpn_panel 2>/dev/null || warn "Пользователь vpn_panel уже существует"
+      createdb vpn_panel -O vpn_panel 2>/dev/null || warn "База данных vpn_panel уже существует"
+      psql -d postgres -c "ALTER USER vpn_panel PASSWORD '$DB_PASSWORD';" 2>/dev/null || warn "Не удалось установить пароль"
+    else
+      sudo -u postgres createuser vpn_panel 2>/dev/null || warn "Пользователь vpn_panel уже существует"
+      sudo -u postgres createdb vpn_panel -O vpn_panel 2>/dev/null || warn "База данных vpn_panel уже существует"
+      sudo -u postgres psql -c "ALTER USER vpn_panel PASSWORD '$DB_PASSWORD';" 2>/dev/null || warn "Не удалось установить пароль"
+    fi
     ok "База данных настроена"
 
     info "Инициализация схемы базы данных..."
