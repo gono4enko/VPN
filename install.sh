@@ -204,7 +204,23 @@ cd "$INSTALL_DIR"
 
 info "Установка зависимостей..."
 rm -f pnpm-lock.yaml
+
+if [ "$OS" = "darwin" ] && [ "$ARCH" = "arm64" ]; then
+  echo "supportedArchitectures:" >> .npmrc
+  echo "  os:" >> .npmrc
+  echo "    - current" >> .npmrc
+  echo "  cpu:" >> .npmrc
+  echo "    - current" >> .npmrc
+fi
+
 pnpm install
+
+if [ "$OS" = "darwin" ] && [ "$ARCH" = "arm64" ]; then
+  info "Установка нативных зависимостей для darwin-arm64..."
+  pnpm add -D @rollup/rollup-darwin-arm64 --filter @workspace/vpn-panel 2>/dev/null || true
+  pnpm add -D @esbuild/darwin-arm64 --filter @workspace/api-server 2>/dev/null || true
+fi
+
 ok "Зависимости установлены"
 
 info "Сборка проекта..."
