@@ -209,27 +209,28 @@ rm -rf node_modules artifacts/*/node_modules lib/*/node_modules
 sed -i.bak '/"@replit\/connectors-sdk"/d' package.json && rm -f package.json.bak
 sed -i.bak '/"@replit\/vite-plugin-cartographer"/d; /"@replit\/vite-plugin-dev-banner"/d; /"@replit\/vite-plugin-runtime-error-modal"/d' artifacts/vpn-panel/package.json && rm -f artifacts/vpn-panel/package.json.bak
 
-pnpm install
+info "Удаление Replit-специфичных overrides из pnpm-workspace.yaml..."
+node -e "
+const fs = require('fs');
+let y = fs.readFileSync('pnpm-workspace.yaml','utf8');
+const lines = y.split('\n');
+const out = [];
+let inOverrides = false;
+for (const line of lines) {
+  if (/^overrides:/.test(line)) { inOverrides = true; continue; }
+  if (inOverrides && /^\s/.test(line)) { continue; }
+  if (inOverrides && !/^\s/.test(line)) { inOverrides = false; }
+  if (/^onlyBuiltDependencies:/.test(line)) { inOverrides = true; continue; }
+  if (/^minimumReleaseAge/.test(line)) { continue; }
+  if (/^minimumReleaseAgeExclude/.test(line)) { inOverrides = true; continue; }
+  const catalogs = ['@replit/vite-plugin-cartographer','@replit/vite-plugin-dev-banner','@replit/vite-plugin-runtime-error-modal'];
+  if (catalogs.some(c => line.includes(c))) { continue; }
+  out.push(line);
+}
+fs.writeFileSync('pnpm-workspace.yaml', out.join('\n'));
+"
 
-ROLLUP_PKG_DIR="$(find node_modules/.pnpm -maxdepth 1 -type d -name 'rollup@*' 2>/dev/null | head -1)/node_modules/rollup"
-if [ -d "$ROLLUP_PKG_DIR" ]; then
-  ROLLUP_VER="$(node -e "console.log(require('$ROLLUP_PKG_DIR/package.json').version)" 2>/dev/null || echo "")"
-  PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)"
-  if [ -n "$ROLLUP_VER" ] && [ ! -d "$ROLLUP_PKG_DIR/../@rollup/rollup-${PLATFORM}" ]; then
-    info "Установка @rollup/rollup-${PLATFORM}@${ROLLUP_VER}..."
-    TMPROLLUP=$(mktemp -d)
-    cd "$TMPROLLUP"
-    npm init -y --silent 2>/dev/null
-    npm install "@rollup/rollup-${PLATFORM}@${ROLLUP_VER}" --no-save 2>/dev/null
-    if [ -d "node_modules/@rollup/rollup-${PLATFORM}" ]; then
-      mkdir -p "$ROLLUP_PKG_DIR/../@rollup"
-      cp -r "node_modules/@rollup/rollup-${PLATFORM}" "$ROLLUP_PKG_DIR/../@rollup/"
-      ok "@rollup/rollup-${PLATFORM} установлен"
-    fi
-    cd "$INSTALL_DIR"
-    rm -rf "$TMPROLLUP"
-  fi
-fi
+pnpm install
 
 ok "Зависимости установлены"
 
