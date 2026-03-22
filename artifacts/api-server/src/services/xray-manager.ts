@@ -206,7 +206,7 @@ export function getXrayStatus(): {
 function queryXrayStats(): { inbound: number; outbound: number } | null {
   try {
     const output = execSync(
-      `${XRAY_BINARY} api stats --server=127.0.0.1:${XRAY_STATS_PORT} -pattern ""`,
+      `${XRAY_BINARY} api stats --server=127.0.0.1:${XRAY_STATS_PORT} -name ""`,
       { timeout: 3000, encoding: "utf-8" }
     );
 
