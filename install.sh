@@ -207,18 +207,43 @@ pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 ok "Зависимости установлены"
 
 info "Сборка проекта..."
-pnpm run build:prod 2>/dev/null || {
-  warn "build:prod не найден, собираем вручную..."
-  pnpm --filter @workspace/vpn-panel run build
-  pnpm --filter @workspace/api-server run build
+export PORT=3000
+export BASE_PATH="/"
+export NODE_ENV=production
+
+if node scripts/build-prod.mjs; then
+  ok "Сборка завершена (build-prod)"
+else
+  warn "build-prod не удался, собираем вручную..."
+  pnpm --filter @workspace/vpn-panel run build || { fail "Сборка vpn-panel не удалась"; exit 1; }
+  pnpm --filter @workspace/api-server run build || { fail "Сборка api-server не удалась"; exit 1; }
 
   mkdir -p deploy/dist
   cp -r artifacts/api-server/dist/* deploy/dist/
-  cp -r artifacts/vpn-panel/dist/public deploy/dist/public
+  mkdir -p deploy/dist/public
+  cp -r artifacts/vpn-panel/dist/public/* deploy/dist/public/
   mkdir -p deploy/db-schema
   cp -r lib/db/src/schema/* deploy/db-schema/
+
+  cat > deploy/package.json <<PKGJSON
+{
+  "name": "vpn-panel-deploy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node --enable-source-maps dist/index.mjs",
+    "db:push": "drizzle-kit push --config ./drizzle.config.ts"
+  },
+  "dependencies": {
+    "drizzle-kit": "^0.31.9",
+    "drizzle-orm": "^0.45.1",
+    "pg": "^8.20.0"
+  }
 }
-ok "Сборка завершена"
+PKGJSON
+  ok "Сборка завершена (ручная)"
+fi
 
 step "7/7 — Настройка базы данных и конфигурация"
 
