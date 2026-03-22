@@ -30,12 +30,16 @@ import type {
   LoginResponse,
   MeResponse,
   MessageResponse,
+  MonitoringActionResponse,
+  MonitoringSettings,
   PingResult,
   QrResponse,
   ServerConfig,
   ServerStatus,
   SpeedtestResult,
+  SwitchEvent,
   TrafficStats,
+  UpdateMonitoringSettingsRequest,
   UpdateProfileRequest,
   UpdateServerRequest,
   UpdateUserRequest,
@@ -2157,6 +2161,486 @@ export function useGetTrafficStats<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetTrafficStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get monitoring settings
+ */
+export const getGetMonitoringSettingsUrl = () => {
+  return `/api/monitoring/settings`;
+};
+
+export const getMonitoringSettings = async (
+  options?: RequestInit,
+): Promise<MonitoringSettings> => {
+  return customFetch<MonitoringSettings>(getGetMonitoringSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMonitoringSettingsQueryKey = () => {
+  return [`/api/monitoring/settings`] as const;
+};
+
+export const getGetMonitoringSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMonitoringSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMonitoringSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMonitoringSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMonitoringSettings>>
+  > = ({ signal }) => getMonitoringSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMonitoringSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMonitoringSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMonitoringSettings>>
+>;
+export type GetMonitoringSettingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get monitoring settings
+ */
+
+export function useGetMonitoringSettings<
+  TData = Awaited<ReturnType<typeof getMonitoringSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMonitoringSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMonitoringSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update monitoring settings
+ */
+export const getUpdateMonitoringSettingsUrl = () => {
+  return `/api/monitoring/settings`;
+};
+
+export const updateMonitoringSettings = async (
+  updateMonitoringSettingsRequest: UpdateMonitoringSettingsRequest,
+  options?: RequestInit,
+): Promise<MonitoringSettings> => {
+  return customFetch<MonitoringSettings>(getUpdateMonitoringSettingsUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateMonitoringSettingsRequest),
+  });
+};
+
+export const getUpdateMonitoringSettingsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMonitoringSettings>>,
+    TError,
+    { data: BodyType<UpdateMonitoringSettingsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMonitoringSettings>>,
+  TError,
+  { data: BodyType<UpdateMonitoringSettingsRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateMonitoringSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMonitoringSettings>>,
+    { data: BodyType<UpdateMonitoringSettingsRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateMonitoringSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateMonitoringSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateMonitoringSettings>>
+>;
+export type UpdateMonitoringSettingsMutationBody =
+  BodyType<UpdateMonitoringSettingsRequest>;
+export type UpdateMonitoringSettingsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update monitoring settings
+ */
+export const useUpdateMonitoringSettings = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMonitoringSettings>>,
+    TError,
+    { data: BodyType<UpdateMonitoringSettingsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateMonitoringSettings>>,
+  TError,
+  { data: BodyType<UpdateMonitoringSettingsRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateMonitoringSettingsMutationOptions(options));
+};
+
+/**
+ * @summary Start background monitoring
+ */
+export const getStartMonitoringUrl = () => {
+  return `/api/monitoring/start`;
+};
+
+export const startMonitoring = async (
+  options?: RequestInit,
+): Promise<MonitoringActionResponse> => {
+  return customFetch<MonitoringActionResponse>(getStartMonitoringUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getStartMonitoringMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startMonitoring>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startMonitoring>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["startMonitoring"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startMonitoring>>,
+    void
+  > = () => {
+    return startMonitoring(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartMonitoringMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startMonitoring>>
+>;
+
+export type StartMonitoringMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Start background monitoring
+ */
+export const useStartMonitoring = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startMonitoring>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof startMonitoring>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getStartMonitoringMutationOptions(options));
+};
+
+/**
+ * @summary Stop background monitoring
+ */
+export const getStopMonitoringUrl = () => {
+  return `/api/monitoring/stop`;
+};
+
+export const stopMonitoring = async (
+  options?: RequestInit,
+): Promise<MonitoringActionResponse> => {
+  return customFetch<MonitoringActionResponse>(getStopMonitoringUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getStopMonitoringMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof stopMonitoring>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof stopMonitoring>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["stopMonitoring"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof stopMonitoring>>,
+    void
+  > = () => {
+    return stopMonitoring(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StopMonitoringMutationResult = NonNullable<
+  Awaited<ReturnType<typeof stopMonitoring>>
+>;
+
+export type StopMonitoringMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Stop background monitoring
+ */
+export const useStopMonitoring = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof stopMonitoring>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof stopMonitoring>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getStopMonitoringMutationOptions(options));
+};
+
+/**
+ * @summary Run a monitoring check immediately
+ */
+export const getCheckNowUrl = () => {
+  return `/api/monitoring/check-now`;
+};
+
+export const checkNow = async (
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getCheckNowUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCheckNowMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkNow>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof checkNow>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["checkNow"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof checkNow>>,
+    void
+  > = () => {
+    return checkNow(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CheckNowMutationResult = NonNullable<
+  Awaited<ReturnType<typeof checkNow>>
+>;
+
+export type CheckNowMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Run a monitoring check immediately
+ */
+export const useCheckNow = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkNow>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof checkNow>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getCheckNowMutationOptions(options));
+};
+
+/**
+ * @summary Get auto-switch event log
+ */
+export const getGetMonitoringEventsUrl = () => {
+  return `/api/monitoring/events`;
+};
+
+export const getMonitoringEvents = async (
+  options?: RequestInit,
+): Promise<SwitchEvent[]> => {
+  return customFetch<SwitchEvent[]>(getGetMonitoringEventsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMonitoringEventsQueryKey = () => {
+  return [`/api/monitoring/events`] as const;
+};
+
+export const getGetMonitoringEventsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMonitoringEvents>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMonitoringEvents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMonitoringEventsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMonitoringEvents>>
+  > = ({ signal }) => getMonitoringEvents({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMonitoringEvents>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMonitoringEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMonitoringEvents>>
+>;
+export type GetMonitoringEventsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get auto-switch event log
+ */
+
+export function useGetMonitoringEvents<
+  TData = Awaited<ReturnType<typeof getMonitoringEvents>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMonitoringEvents>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMonitoringEventsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

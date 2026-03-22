@@ -211,6 +211,9 @@ export const ListProfilesResponseItem = zod.object({
   countryFlag: zod.string(),
   isActive: zod.boolean(),
   lastPing: zod.number().nullable(),
+  lastDownloadSpeed: zod.number().nullish(),
+  lastCheckAt: zod.string().nullish(),
+  isOnline: zod.boolean(),
   status: zod.string(),
   createdAt: zod.string(),
 });
@@ -266,6 +269,9 @@ export const ImportProfileSubResponseItem = zod.object({
   countryFlag: zod.string(),
   isActive: zod.boolean(),
   lastPing: zod.number().nullable(),
+  lastDownloadSpeed: zod.number().nullish(),
+  lastCheckAt: zod.string().nullish(),
+  isOnline: zod.boolean(),
   status: zod.string(),
   createdAt: zod.string(),
 });
@@ -311,6 +317,9 @@ export const UpdateProfileResponse = zod.object({
   countryFlag: zod.string(),
   isActive: zod.boolean(),
   lastPing: zod.number().nullable(),
+  lastDownloadSpeed: zod.number().nullish(),
+  lastCheckAt: zod.string().nullish(),
+  isOnline: zod.boolean(),
   status: zod.string(),
   createdAt: zod.string(),
 });
@@ -346,6 +355,9 @@ export const ActivateProfileResponse = zod.object({
   countryFlag: zod.string(),
   isActive: zod.boolean(),
   lastPing: zod.number().nullable(),
+  lastDownloadSpeed: zod.number().nullish(),
+  lastCheckAt: zod.string().nullish(),
+  isOnline: zod.boolean(),
   status: zod.string(),
   createdAt: zod.string(),
 });
@@ -398,6 +410,77 @@ export const GetTrafficStatsResponse = zod.object({
   totalIn: zod.number(),
   totalOut: zod.number(),
 });
+
+/**
+ * @summary Get monitoring settings
+ */
+export const GetMonitoringSettingsResponse = zod.object({
+  enabled: zod.boolean(),
+  intervalSeconds: zod.number(),
+  pingThresholdMs: zod.number(),
+  autoSwitch: zod.boolean(),
+  lastCheckAt: zod.string().nullish(),
+  isRunning: zod.boolean(),
+});
+
+/**
+ * @summary Update monitoring settings
+ */
+export const UpdateMonitoringSettingsBody = zod.object({
+  intervalSeconds: zod.number().optional(),
+  pingThresholdMs: zod.number().optional(),
+  autoSwitch: zod.boolean().optional(),
+});
+
+export const UpdateMonitoringSettingsResponse = zod.object({
+  enabled: zod.boolean(),
+  intervalSeconds: zod.number(),
+  pingThresholdMs: zod.number(),
+  autoSwitch: zod.boolean(),
+  lastCheckAt: zod.string().nullish(),
+  isRunning: zod.boolean(),
+});
+
+/**
+ * @summary Start background monitoring
+ */
+export const StartMonitoringResponse = zod.object({
+  message: zod.string(),
+  isRunning: zod.boolean(),
+});
+
+/**
+ * @summary Stop background monitoring
+ */
+export const StopMonitoringResponse = zod.object({
+  message: zod.string(),
+  isRunning: zod.boolean(),
+});
+
+/**
+ * @summary Run a monitoring check immediately
+ */
+export const CheckNowResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Get auto-switch event log
+ */
+export const GetMonitoringEventsResponseItem = zod.object({
+  id: zod.number(),
+  fromProfileId: zod.number().nullish(),
+  fromProfileName: zod.string().nullish(),
+  toProfileId: zod.number(),
+  toProfileName: zod.string(),
+  reason: zod.string(),
+  pingBefore: zod.number().nullish(),
+  pingAfter: zod.number().nullish(),
+  createdAt: zod.string(),
+});
+export const GetMonitoringEventsResponse = zod.array(
+  GetMonitoringEventsResponseItem,
+);
 
 /**
  * @summary List all servers in cluster

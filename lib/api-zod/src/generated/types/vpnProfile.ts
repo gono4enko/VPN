@@ -24,6 +24,11 @@ export interface VpnProfile {
   isActive: boolean;
   /** @nullable */
   lastPing: number | null;
+  /** @nullable */
+  lastDownloadSpeed?: number | null;
+  /** @nullable */
+  lastCheckAt?: string | null;
+  isOnline: boolean;
   status: string;
   createdAt: string;
 }

@@ -21,6 +21,8 @@ tags:
     description: Speed testing
   - name: cluster
     description: Server cluster management
+  - name: monitoring
+    description: Node monitoring and auto-switch
 paths:
   /healthz:
     get:
@@ -517,6 +519,85 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TrafficStats"
+  /monitoring/settings:
+    get:
+      operationId: getMonitoringSettings
+      tags: [monitoring]
+      summary: Get monitoring settings
+      responses:
+        "200":
+          description: Monitoring settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitoringSettings"
+    put:
+      operationId: updateMonitoringSettings
+      tags: [monitoring]
+      summary: Update monitoring settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMonitoringSettingsRequest"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitoringSettings"
+  /monitoring/start:
+    post:
+      operationId: startMonitoring
+      tags: [monitoring]
+      summary: Start background monitoring
+      responses:
+        "200":
+          description: Monitoring started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitoringActionResponse"
+  /monitoring/stop:
+    post:
+      operationId: stopMonitoring
+      tags: [monitoring]
+      summary: Stop background monitoring
+      responses:
+        "200":
+          description: Monitoring stopped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitoringActionResponse"
+  /monitoring/check-now:
+    post:
+      operationId: checkNow
+      tags: [monitoring]
+      summary: Run a monitoring check immediately
+      responses:
+        "200":
+          description: Check completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+  /monitoring/events:
+    get:
+      operationId: getMonitoringEvents
+      tags: [monitoring]
+      summary: Get auto-switch event log
+      responses:
+        "200":
+          description: Event log
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SwitchEvent"
   /cluster/servers:
     get:
       operationId: listServers
@@ -831,6 +912,12 @@ components:
           type: boolean
         lastPing:
           type: ["integer", "null"]
+        lastDownloadSpeed:
+          type: ["number", "null"]
+        lastCheckAt:
+          type: ["string", "null"]
+        isOnline:
+          type: boolean
         status:
           type: string
         createdAt:
@@ -852,6 +939,7 @@ components:
         - countryFlag
         - isActive
         - lastPing
+        - isOnline
         - status
         - createdAt
     CreateProfileRequest:
@@ -1123,3 +1211,70 @@ components:
         - onlineServers
         - totalClients
         - totalBandwidth
+    MonitoringSettings:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        intervalSeconds:
+          type: integer
+        pingThresholdMs:
+          type: integer
+        autoSwitch:
+          type: boolean
+        lastCheckAt:
+          type: ["string", "null"]
+        isRunning:
+          type: boolean
+      required:
+        - enabled
+        - intervalSeconds
+        - pingThresholdMs
+        - autoSwitch
+        - isRunning
+    UpdateMonitoringSettingsRequest:
+      type: object
+      properties:
+        intervalSeconds:
+          type: integer
+        pingThresholdMs:
+          type: integer
+        autoSwitch:
+          type: boolean
+    MonitoringActionResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        isRunning:
+          type: boolean
+      required:
+        - message
+        - isRunning
+    SwitchEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        fromProfileId:
+          type: ["integer", "null"]
+        fromProfileName:
+          type: ["string", "null"]
+        toProfileId:
+          type: integer
+        toProfileName:
+          type: string
+        reason:
+          type: string
+        pingBefore:
+          type: ["integer", "null"]
+        pingAfter:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - toProfileId
+        - toProfileName
+        - reason
+        - createdAt

@@ -38,6 +38,9 @@ function formatProfile(profile: VpnProfile) {
     countryFlag: profile.countryFlag || "🌐",
     isActive: profile.isActive,
     lastPing: profile.lastPing,
+    lastDownloadSpeed: profile.lastDownloadSpeed,
+    lastCheckAt: profile.lastCheckAt?.toISOString() ?? null,
+    isOnline: profile.isOnline,
     status: profile.status,
     createdAt: profile.createdAt.toISOString(),
   };
@@ -278,11 +281,22 @@ router.get("/profiles/:id/ping", async (req, res): Promise<void> => {
     return;
   }
 
-  const pingMs = Math.floor(Math.random() * 200) + 10;
+  const { tcpPing } = await import("../services/tcp-ping");
+  const result = await tcpPing(profile.address, profile.port);
 
-  await db.update(vpnProfilesTable).set({ lastPing: pingMs, status: "inactive" }).where(eq(vpnProfilesTable.id, params.data.id));
+  await db.update(vpnProfilesTable).set({
+    lastPing: result.latencyMs,
+    lastDownloadSpeed: result.tlsEstimateMs ? Math.round((1000 / result.tlsEstimateMs) * 100) / 100 : null,
+    lastCheckAt: new Date(),
+    isOnline: result.reachable,
+    status: result.reachable ? (profile.isActive ? "active" : "inactive") : "offline",
+  }).where(eq(vpnProfilesTable.id, params.data.id));
 
-  res.json(PingProfileResponse.parse({ profileId: profile.id, ping: pingMs, status: "ok" }));
+  res.json(PingProfileResponse.parse({
+    profileId: profile.id,
+    ping: result.latencyMs,
+    status: result.reachable ? "ok" : "fail",
+  }));
 });
 
 export default router;

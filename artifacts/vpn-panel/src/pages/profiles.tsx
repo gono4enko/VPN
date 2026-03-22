@@ -99,11 +99,16 @@ export default function ProfilesPage() {
                     <span className="text-2xl">{profile.countryFlag}</span>
                     <h3 className="font-display font-bold text-lg text-foreground tracking-wider uppercase truncate max-w-[150px]">{profile.name}</h3>
                   </div>
-                  <CyberTooltip text={profile.isActive ? 'Этот узел сейчас используется' : 'Узел в режиме ожидания'}>
-                    <CyberBadge variant={profile.isActive ? 'default' : 'muted'}>
-                      {profile.isActive ? 'АКТИВЕН' : 'ОЖИДАНИЕ'}
+                  <div className="flex gap-2">
+                    <CyberBadge variant={profile.isOnline ? 'green' : 'red'}>
+                      {profile.isOnline ? 'ОНЛАЙН' : 'ОФЛАЙН'}
                     </CyberBadge>
-                  </CyberTooltip>
+                    <CyberTooltip text={profile.isActive ? 'Этот узел сейчас используется' : 'Узел в режиме ожидания'}>
+                      <CyberBadge variant={profile.isActive ? 'default' : 'muted'}>
+                        {profile.isActive ? 'АКТИВЕН' : 'ОЖИДАНИЕ'}
+                      </CyberBadge>
+                    </CyberTooltip>
+                  </div>
                 </div>
                 
                 <div className="space-y-2 mb-6 font-mono text-sm">
@@ -128,6 +133,18 @@ export default function ProfilesPage() {
                       </CyberTooltip>
                     </div>
                   </div>
+                  {profile.lastDownloadSpeed != null && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Скорость:</span>
+                      <span className="text-cyan-400">{profile.lastDownloadSpeed.toFixed(1)} Мбит/с</span>
+                    </div>
+                  )}
+                  {profile.lastCheckAt && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Проверка:</span>
+                      <span className="text-muted-foreground/70">{new Date(profile.lastCheckAt).toLocaleTimeString('ru-RU')}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 

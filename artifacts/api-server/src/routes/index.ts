@@ -6,6 +6,7 @@ import profilesRouter from "./profiles";
 import serverRouter from "./server";
 import speedtestRouter from "./speedtest";
 import clusterRouter from "./cluster";
+import monitoringRouter from "./monitoring";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(profilesRouter);
 router.use(serverRouter);
 router.use(speedtestRouter);
 router.use(clusterRouter);
+router.use(monitoringRouter);
 
 export default router;

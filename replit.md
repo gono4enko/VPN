@@ -139,12 +139,20 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - `GET /api/cluster/servers/:id/ping` — ping server
 - `POST /api/cluster/servers/:id/set-primary` — set primary server
 - `GET /api/cluster/stats` — cluster statistics
+- `GET /api/monitoring/settings` — monitoring settings and status
+- `PUT /api/monitoring/settings` — update monitoring settings (intervalSeconds, pingThresholdMs, autoSwitch)
+- `POST /api/monitoring/start` — start background monitoring
+- `POST /api/monitoring/stop` — stop background monitoring
+- `POST /api/monitoring/check-now` — run immediate check on all profiles
+- `GET /api/monitoring/events` — list auto-switch event log
 
 ### Database Schema
 
 - `vpn_users` — id, uuid, name, status, trafficUsed, trafficLimit, expiresAt, createdAt
-- `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, isActive, createdAt
+- `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, lastDownloadSpeed, lastCheckAt, isOnline, isActive, createdAt
 - `vpn_servers` — id, name, address, port, country, countryFlag, provider, status, lastPing, cpuUsage, memUsage, bandwidthUsed, bandwidthLimit, connectedClients, maxClients, isPrimary, createdAt
+- `monitoring_settings` — id, enabled, intervalSeconds, pingThresholdMs, autoSwitch, lastCheckAt
+- `switch_event_log` — id, fromProfileId, fromProfileName, toProfileId, toProfileName, reason, pingBefore, pingAfter, createdAt
 - `audit_logs` — id, action, details, timestamp
 
 ### Required Environment

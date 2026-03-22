@@ -105,6 +105,11 @@ export interface VpnProfile {
   isActive: boolean;
   /** @nullable */
   lastPing: number | null;
+  /** @nullable */
+  lastDownloadSpeed?: number | null;
+  /** @nullable */
+  lastCheckAt?: string | null;
+  isOnline: boolean;
   status: string;
   createdAt: string;
 }
@@ -240,4 +245,41 @@ export interface ClusterStats {
   totalClients: number;
   avgPing?: number | null;
   totalBandwidth: number;
+}
+
+export interface MonitoringSettings {
+  enabled: boolean;
+  intervalSeconds: number;
+  pingThresholdMs: number;
+  autoSwitch: boolean;
+  /** @nullable */
+  lastCheckAt?: string | null;
+  isRunning: boolean;
+}
+
+export interface UpdateMonitoringSettingsRequest {
+  intervalSeconds?: number;
+  pingThresholdMs?: number;
+  autoSwitch?: boolean;
+}
+
+export interface MonitoringActionResponse {
+  message: string;
+  isRunning: boolean;
+}
+
+export interface SwitchEvent {
+  id: number;
+  /** @nullable */
+  fromProfileId?: number | null;
+  /** @nullable */
+  fromProfileName?: string | null;
+  toProfileId: number;
+  toProfileName: string;
+  reason: string;
+  /** @nullable */
+  pingBefore?: number | null;
+  /** @nullable */
+  pingAfter?: number | null;
+  createdAt: string;
 }

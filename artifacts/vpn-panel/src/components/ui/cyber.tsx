@@ -42,11 +42,13 @@ export const CyberInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttr
 );
 CyberInput.displayName = "CyberInput";
 
-export const CyberBadge = ({ className, children, variant = 'default' }: { className?: string, children: React.ReactNode, variant?: 'default' | 'destructive' | 'muted' }) => (
+export const CyberBadge = ({ className, children, variant = 'default' }: { className?: string, children: React.ReactNode, variant?: 'default' | 'destructive' | 'muted' | 'green' | 'red' }) => (
   <span className={cn(
     "cyber-badge", 
     variant === 'destructive' && "cyber-badge-destructive",
     variant === 'muted' && "cyber-badge-muted",
+    variant === 'green' && "border-green-500/50 bg-green-500/10 text-green-400",
+    variant === 'red' && "border-red-500/50 bg-red-500/10 text-red-400",
     className
   )}>
     {children}
