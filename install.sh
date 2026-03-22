@@ -241,14 +241,19 @@ ok "pnpm-workspace.yaml перезаписан (чистая версия)"
 
 node -e "
 var f=require('fs');
-var p='package.json';
-var pkg=JSON.parse(f.readFileSync(p,'utf8'));
-if(pkg.dependencies)delete pkg.dependencies['@replit/connectors-sdk'];
-f.writeFileSync(p,JSON.stringify(pkg,null,2)+'\n');
-var v='artifacts/vpn-panel/package.json';
-var vp=JSON.parse(f.readFileSync(v,'utf8'));
-['@replit/vite-plugin-cartographer','@replit/vite-plugin-dev-banner','@replit/vite-plugin-runtime-error-modal'].forEach(function(d){if(vp.devDependencies)delete vp.devDependencies[d];if(vp.dependencies)delete vp.dependencies[d];});
-f.writeFileSync(v,JSON.stringify(vp,null,2)+'\n');
+var replit=['@replit/vite-plugin-cartographer','@replit/vite-plugin-dev-banner','@replit/vite-plugin-runtime-error-modal','@replit/connectors-sdk'];
+function clean(path){
+  if(!f.existsSync(path))return;
+  var pkg=JSON.parse(f.readFileSync(path,'utf8'));
+  replit.forEach(function(d){
+    if(pkg.dependencies)delete pkg.dependencies[d];
+    if(pkg.devDependencies)delete pkg.devDependencies[d];
+  });
+  f.writeFileSync(path,JSON.stringify(pkg,null,2)+'\n');
+}
+clean('package.json');
+clean('artifacts/vpn-panel/package.json');
+clean('artifacts/mockup-sandbox/package.json');
 console.log('package.json files cleaned');
 " || true
 
