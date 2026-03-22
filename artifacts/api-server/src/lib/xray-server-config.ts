@@ -2,7 +2,7 @@ import type { VpnUser, VpnProfile } from "@workspace/db/schema";
 import { getRealityPrivateKey, getRealityShortId } from "./reality-keys";
 import { buildStreamSettings, buildFragmentOutbound } from "./xray-config";
 
-const LISTEN_PORT = parseInt(process.env.XRAY_LISTEN_PORT || "443", 10);
+const LISTEN_PORT = parseInt(process.env.XRAY_LISTEN_PORT || "8443", 10);
 const XRAY_STATS_PORT = 10085;
 const REALITY_DEST = process.env.REALITY_DEST || "www.microsoft.com:443";
 const REALITY_SERVER_NAMES = (process.env.REALITY_SERVER_NAMES || "www.microsoft.com,microsoft.com").split(",").map(s => s.trim());
