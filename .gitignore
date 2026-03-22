@@ -47,6 +47,14 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+.agents/
+.canvas/
+attached_assets/
+snippets/
+.replit
+replit.md
+replit_zip_error_log.txt
+artifact.toml
 
 # Xray runtime data
 xray-data/
