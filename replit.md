@@ -201,3 +201,17 @@ Key files:
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
+
+## Raspberry Pi 5 Deployment
+
+The `deploy/` directory contains everything needed for self-hosted deployment on a Raspberry Pi 5 (ARM64) via Docker Compose.
+
+- `pnpm run build:prod` — builds frontend + API and copies production artifacts into `deploy/`
+- `deploy/Dockerfile` — multi-stage Docker build (Node 22, builds from monorepo source)
+- `deploy/docker-compose.yml` — runs the app (port 3000) + PostgreSQL 16 with persistent volume
+- `deploy/.env.example` — template for required environment variables
+- `deploy/entrypoint.sh` — applies DB schema via `drizzle-kit push` then starts the server
+- `deploy/drizzle.config.ts` — production Drizzle Kit config pointing to `db-schema/`
+- `deploy/README.md` — step-by-step deployment guide in Russian
+
+In production mode, the Express API server serves the Vite-built frontend static files from `dist/public/` and handles SPA routing via a catch-all route.

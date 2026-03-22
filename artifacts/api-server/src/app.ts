@@ -1,3 +1,4 @@
+import path from "node:path";
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
@@ -31,5 +32,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+if (process.env.NODE_ENV === "production") {
+  const clientDir = path.resolve(__dirname, "public");
+  app.use(express.static(clientDir));
+  app.get("/{*splat}", (_req, res) => {
+    res.sendFile(path.join(clientDir, "index.html"));
+  });
+}
 
 export default app;

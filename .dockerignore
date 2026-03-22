@@ -1,0 +1,12 @@
+node_modules
+.git
+deploy/dist
+deploy/db-schema
+deploy/node_modules
+deploy/.env
+artifacts/*/node_modules
+artifacts/*/dist
+lib/*/node_modules
+scripts/node_modules
+*.log
+.local

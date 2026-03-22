@@ -1,0 +1,5 @@
+dist/
+db-schema/
+package.json
+node_modules/
+.env
