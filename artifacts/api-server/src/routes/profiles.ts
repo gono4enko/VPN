@@ -17,7 +17,6 @@ import {
   PingProfileParams,
   PingProfileResponse,
 } from "@workspace/api-zod";
-import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
@@ -66,12 +65,12 @@ function parseVlessUrl(url: string) {
   };
 }
 
-router.get("/profiles", authMiddleware, async (_req, res): Promise<void> => {
+router.get("/profiles", async (_req, res): Promise<void> => {
   const profiles = await db.select().from(vpnProfilesTable).orderBy(vpnProfilesTable.createdAt);
   res.json(ListProfilesResponse.parse(profiles.map(formatProfile)));
 });
 
-router.post("/profiles", authMiddleware, async (req, res): Promise<void> => {
+router.post("/profiles", async (req, res): Promise<void> => {
   const parsed = CreateProfileBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -97,7 +96,7 @@ router.post("/profiles", authMiddleware, async (req, res): Promise<void> => {
   res.status(201).json(formatProfile(profile));
 });
 
-router.post("/profiles/import-url", authMiddleware, async (req, res): Promise<void> => {
+router.post("/profiles/import-url", async (req, res): Promise<void> => {
   const parsed = ImportProfileUrlBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -127,7 +126,7 @@ router.post("/profiles/import-url", authMiddleware, async (req, res): Promise<vo
   res.status(201).json(formatProfile(profile));
 });
 
-router.post("/profiles/import-sub", authMiddleware, async (req, res): Promise<void> => {
+router.post("/profiles/import-sub", async (req, res): Promise<void> => {
   const parsed = ImportProfileSubBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -205,7 +204,7 @@ router.post("/profiles/import-sub", authMiddleware, async (req, res): Promise<vo
   }
 });
 
-router.put("/profiles/:id", authMiddleware, async (req, res): Promise<void> => {
+router.put("/profiles/:id", async (req, res): Promise<void> => {
   const params = UpdateProfileParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -232,7 +231,7 @@ router.put("/profiles/:id", authMiddleware, async (req, res): Promise<void> => {
   res.json(UpdateProfileResponse.parse(formatProfile(profile)));
 });
 
-router.delete("/profiles/:id", authMiddleware, async (req, res): Promise<void> => {
+router.delete("/profiles/:id", async (req, res): Promise<void> => {
   const params = DeleteProfileParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -248,7 +247,7 @@ router.delete("/profiles/:id", authMiddleware, async (req, res): Promise<void> =
   res.sendStatus(204);
 });
 
-router.post("/profiles/:id/activate", authMiddleware, async (req, res): Promise<void> => {
+router.post("/profiles/:id/activate", async (req, res): Promise<void> => {
   const params = ActivateProfileParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -266,7 +265,7 @@ router.post("/profiles/:id/activate", authMiddleware, async (req, res): Promise<
   res.json(ActivateProfileResponse.parse(formatProfile(profile)));
 });
 
-router.get("/profiles/:id/ping", authMiddleware, async (req, res): Promise<void> => {
+router.get("/profiles/:id/ping", async (req, res): Promise<void> => {
   const params = PingProfileParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

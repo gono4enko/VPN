@@ -5,11 +5,10 @@ import {
   RunSpeedtestResponse,
   AutoSelectProfileResponse,
 } from "@workspace/api-zod";
-import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-router.post("/speedtest/run", authMiddleware, async (_req, res): Promise<void> => {
+router.post("/speedtest/run", async (_req, res): Promise<void> => {
   const profiles = await db.select().from(vpnProfilesTable);
 
   const results = profiles.map((p) => {
@@ -29,7 +28,7 @@ router.post("/speedtest/run", authMiddleware, async (_req, res): Promise<void> =
   res.json(RunSpeedtestResponse.parse(results));
 });
 
-router.post("/speedtest/auto-select", authMiddleware, async (_req, res): Promise<void> => {
+router.post("/speedtest/auto-select", async (_req, res): Promise<void> => {
   const profiles = await db.select().from(vpnProfilesTable);
 
   if (profiles.length === 0) {

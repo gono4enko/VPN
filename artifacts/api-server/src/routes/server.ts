@@ -7,7 +7,6 @@ import {
   GetServerConfigResponse,
   GetTrafficStatsResponse,
 } from "@workspace/api-zod";
-import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
@@ -17,7 +16,7 @@ const OFFICE_SNI = process.env.OFFICE_SNI || "apple.com";
 
 const startTime = Date.now();
 
-router.get("/server/status", authMiddleware, async (_req, res): Promise<void> => {
+router.get("/server/status", async (_req, res): Promise<void> => {
   const users = await db.select({ count: count() }).from(vpnUsersTable).where(eq(vpnUsersTable.status, "active"));
   const activeProfile = await db.select().from(vpnProfilesTable).where(eq(vpnProfilesTable.isActive, true));
 
@@ -35,11 +34,11 @@ router.get("/server/status", authMiddleware, async (_req, res): Promise<void> =>
   }));
 });
 
-router.post("/server/restart", authMiddleware, async (_req, res): Promise<void> => {
+router.post("/server/restart", async (_req, res): Promise<void> => {
   res.json(RestartServerResponse.parse({ message: "Xray server restarted successfully (simulated)" }));
 });
 
-router.get("/server/config", authMiddleware, async (_req, res): Promise<void> => {
+router.get("/server/config", async (_req, res): Promise<void> => {
   res.json(GetServerConfigResponse.parse({
     officeIp: OFFICE_IP,
     officePort: OFFICE_PORT,
@@ -50,7 +49,7 @@ router.get("/server/config", authMiddleware, async (_req, res): Promise<void> =>
   }));
 });
 
-router.get("/traffic/stats", authMiddleware, async (_req, res): Promise<void> => {
+router.get("/traffic/stats", async (_req, res): Promise<void> => {
   const now = new Date();
   const points = [];
   for (let i = 23; i >= 0; i--) {

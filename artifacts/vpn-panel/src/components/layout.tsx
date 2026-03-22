@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Users, Globe, Settings, LogOut, TerminalSquare } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
-import { useLogout } from '@workspace/api-client-react';
+import { LayoutDashboard, Users, Globe, Settings, TerminalSquare } from 'lucide-react';
 import { cn } from './ui/cyber';
 
 const navItems = [
@@ -14,17 +12,9 @@ const navItems = [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { logout } = useAuth();
-  const logoutMutation = useLogout();
-
-  const handleLogout = async () => {
-    try { await logoutMutation.mutateAsync(); } catch {}
-    logout();
-  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-transparent text-foreground relative z-0">
-      {/* Background Image */}
       <div className="fixed inset-0 z-[-1] pointer-events-none">
         <img 
           src={`${import.meta.env.BASE_URL}images/cyber-bg.png`} 
@@ -34,7 +24,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px]" />
       </div>
 
-      {/* Sidebar */}
       <aside className="w-full md:w-64 md:h-screen border-r border-primary/20 bg-card/50 backdrop-blur-md flex flex-col shrink-0">
         <div className="p-6 flex items-center gap-3 border-b border-primary/20">
           <div className="w-10 h-10 bg-primary/20 border border-primary flex items-center justify-center text-primary shadow-[0_0_15px_rgba(0,212,170,0.4)]">
@@ -64,19 +53,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-
-        <div className="p-4 border-t border-primary/20">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full font-display uppercase tracking-wider text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-300 border-l-2 border-transparent hover:border-destructive text-left"
-          >
-            <LogOut className="w-5 h-5" />
-            Disconnect
-          </button>
-        </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 h-screen overflow-y-auto relative">
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
           {children}

@@ -20,7 +20,6 @@ import {
   GetUserVlessUrlParams,
   GetUserVlessUrlResponse,
 } from "@workspace/api-zod";
-import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
@@ -48,12 +47,12 @@ function formatUser(user: VpnUser) {
   };
 }
 
-router.get("/users", authMiddleware, async (_req, res): Promise<void> => {
+router.get("/users", async (_req, res): Promise<void> => {
   const users = await db.select().from(vpnUsersTable).orderBy(vpnUsersTable.createdAt);
   res.json(ListUsersResponse.parse(users.map(formatUser)));
 });
 
-router.post("/users", authMiddleware, async (req, res): Promise<void> => {
+router.post("/users", async (req, res): Promise<void> => {
   const parsed = CreateUserBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -71,7 +70,7 @@ router.post("/users", authMiddleware, async (req, res): Promise<void> => {
   res.status(201).json(formatUser(user));
 });
 
-router.put("/users/:id", authMiddleware, async (req, res): Promise<void> => {
+router.put("/users/:id", async (req, res): Promise<void> => {
   const params = UpdateUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -98,7 +97,7 @@ router.put("/users/:id", authMiddleware, async (req, res): Promise<void> => {
   res.json(UpdateUserResponse.parse(formatUser(user)));
 });
 
-router.delete("/users/:id", authMiddleware, async (req, res): Promise<void> => {
+router.delete("/users/:id", async (req, res): Promise<void> => {
   const params = DeleteUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -114,7 +113,7 @@ router.delete("/users/:id", authMiddleware, async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.post("/users/:id/block", authMiddleware, async (req, res): Promise<void> => {
+router.post("/users/:id/block", async (req, res): Promise<void> => {
   const params = BlockUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -130,7 +129,7 @@ router.post("/users/:id/block", authMiddleware, async (req, res): Promise<void> 
   res.json(BlockUserResponse.parse(formatUser(user)));
 });
 
-router.post("/users/:id/unblock", authMiddleware, async (req, res): Promise<void> => {
+router.post("/users/:id/unblock", async (req, res): Promise<void> => {
   const params = UnblockUserParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -146,7 +145,7 @@ router.post("/users/:id/unblock", authMiddleware, async (req, res): Promise<void
   res.json(UnblockUserResponse.parse(formatUser(user)));
 });
 
-router.get("/users/:id/qr", authMiddleware, async (req, res): Promise<void> => {
+router.get("/users/:id/qr", async (req, res): Promise<void> => {
   const params = GetUserQrParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -165,7 +164,7 @@ router.get("/users/:id/qr", authMiddleware, async (req, res): Promise<void> => {
   res.json(GetUserQrResponse.parse({ qrDataUrl, vlessUrl }));
 });
 
-router.get("/users/:id/vless-url", authMiddleware, async (req, res): Promise<void> => {
+router.get("/users/:id/vless-url", async (req, res): Promise<void> => {
   const params = GetUserVlessUrlParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

@@ -30,11 +30,11 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   res.json(LoginResponse.parse({ token, username }));
 });
 
-router.post("/auth/logout", authMiddleware, async (_req, res): Promise<void> => {
+router.post("/auth/logout", async (_req, res): Promise<void> => {
   res.json({ message: "Logged out successfully" });
 });
 
-router.get("/auth/me", authMiddleware, async (req: AuthRequest, res): Promise<void> => {
+router.get("/auth/me", async (req: AuthRequest, res): Promise<void> => {
   res.json(GetMeResponse.parse({ username: req.user!.username }));
 });
 
