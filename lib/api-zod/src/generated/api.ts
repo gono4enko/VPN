@@ -29,6 +29,13 @@ export const LoginResponse = zod.object({
 });
 
 /**
+ * @summary Logout current session
+ */
+export const LogoutResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
  * @summary Get current user info
  */
 export const GetMeResponse = zod.object({

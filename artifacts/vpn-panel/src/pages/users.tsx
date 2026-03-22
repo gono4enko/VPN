@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { CyberCard, CyberButton, CyberBadge, Modal, CyberInput } from '@/components/ui/cyber';
 import { Plus, Eye, EyeOff, Edit, Trash2, Ban, CheckCircle, QrCode, Copy } from 'lucide-react';
 import { format } from 'date-fns';
+import type { VpnUser } from '@workspace/api-client-react';
 
 export default function UsersPage() {
   const { authOpts } = useAuth();
@@ -23,7 +24,7 @@ export default function UsersPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<VpnUser | null>(null);
   const [activeQrUser, setActiveQrUser] = useState<number | null>(null);
 
   // Form states
@@ -76,7 +77,7 @@ export default function UsersPage() {
     }
   };
 
-  const toggleBlock = async (user: any) => {
+  const toggleBlock = async (user: VpnUser) => {
     if (user.status === 'active') {
       await blockMutation.mutateAsync({ id: user.id });
     } else {
@@ -85,7 +86,7 @@ export default function UsersPage() {
     queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
   };
 
-  const openEdit = (user: any) => {
+  const openEdit = (user: VpnUser) => {
     setEditingUser(user);
     setFormData({ 
       name: user.name, 

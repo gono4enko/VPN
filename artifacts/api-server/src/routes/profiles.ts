@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
 import { db, vpnProfilesTable } from "@workspace/db";
+import type { VpnProfile } from "@workspace/db/schema";
 import {
   CreateProfileBody,
   ListProfilesResponse,
@@ -20,7 +21,7 @@ import { authMiddleware } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-function formatProfile(profile: any) {
+function formatProfile(profile: VpnProfile) {
   return {
     id: profile.id,
     name: profile.name,
@@ -180,7 +181,7 @@ router.put("/profiles/:id", authMiddleware, async (req, res): Promise<void> => {
     return;
   }
 
-  const updateData: any = {};
+  const updateData: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(parsed.data)) {
     if (value !== undefined) updateData[key] = value;
   }

@@ -23,8 +23,9 @@ export default function Login() {
       const data = await loginMutation.mutateAsync({ data: { username, password } });
       login(data.token);
       setLocation('/');
-    } catch (err: any) {
-      setError(err?.response?.data?.error || 'Authentication failed. Access denied.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Authentication failed. Access denied.';
+      setError(message);
     }
   };
 

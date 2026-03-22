@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
 import { db, vpnUsersTable } from "@workspace/db";
+import type { VpnUser } from "@workspace/db/schema";
 import {
   CreateUserBody,
   ListUsersResponse,
@@ -33,7 +34,7 @@ function buildVlessUrl(uuid: string, name: string): string {
   return `vless://${uuid}@${OFFICE_IP}:${OFFICE_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${OFFICE_SNI}&fp=random&pbk=${OFFICE_PUBLIC_KEY}&sid=${OFFICE_SHORT_ID}&type=tcp#${encodeURIComponent(name)}`;
 }
 
-function formatUser(user: any) {
+function formatUser(user: VpnUser) {
   return {
     id: user.id,
     name: user.name,
@@ -83,7 +84,7 @@ router.put("/users/:id", authMiddleware, async (req, res): Promise<void> => {
     return;
   }
 
-  const updateData: any = {};
+  const updateData: Partial<{ name: string; trafficLimit: number; expiresAt: Date | null }> = {};
   if (parsed.data.name !== undefined) updateData.name = parsed.data.name;
   if (parsed.data.trafficLimit !== undefined) updateData.trafficLimit = parsed.data.trafficLimit;
   if (parsed.data.expiresAt !== undefined) updateData.expiresAt = parsed.data.expiresAt ? new Date(parsed.data.expiresAt) : null;

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { LayoutDashboard, Users, Globe, Settings, LogOut, TerminalSquare } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { useLogout } from '@workspace/api-client-react';
 import { cn } from './ui/cyber';
 
 const navItems = [
@@ -14,6 +15,12 @@ const navItems = [
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { logout } = useAuth();
+  const logoutMutation = useLogout();
+
+  const handleLogout = async () => {
+    try { await logoutMutation.mutateAsync(); } catch {}
+    logout();
+  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-transparent text-foreground relative z-0">
@@ -60,7 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="p-4 border-t border-primary/20">
           <button 
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full font-display uppercase tracking-wider text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-300 border-l-2 border-transparent hover:border-destructive text-left"
           >
             <LogOut className="w-5 h-5" />
