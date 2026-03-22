@@ -555,7 +555,12 @@ export const GetMonitoringSettingsResponse = zod.object({
 /**
  * @summary Update monitoring settings
  */
-export const UpdateMonitoringSettingsBody = zod.unknown();
+export const UpdateMonitoringSettingsBody = zod.object({
+  enabled: zod.boolean().optional(),
+  intervalSeconds: zod.number().optional(),
+  pingThresholdMs: zod.number().optional(),
+  autoSwitchEnabled: zod.boolean().optional(),
+});
 
 export const UpdateMonitoringSettingsResponse = zod.object({
   id: zod.number(),
@@ -591,6 +596,13 @@ export const StartMonitoringResponse = zod.object({
  * @summary Stop the monitoring loop
  */
 export const StopMonitoringResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Run an immediate monitoring check
+ */
+export const CheckNowResponse = zod.object({
   message: zod.string(),
 });
 
@@ -1055,6 +1067,13 @@ export const SyncClusterNodeResponse = zod.object({
   pushed: zod.number(),
   pulled: zod.number(),
   conflicts: zod.number(),
+  message: zod.string(),
+});
+
+/**
+ * @summary Trigger a full cluster sync
+ */
+export const TriggerClusterSyncResponse = zod.object({
   message: zod.string(),
 });
 

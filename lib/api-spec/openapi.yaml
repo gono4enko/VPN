@@ -675,6 +675,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
+  /monitoring/check-now:
+    post:
+      operationId: checkNow
+      tags: [monitoring]
+      summary: Run an immediate monitoring check
+      responses:
+        "200":
+          description: Check completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
   /monitoring/events:
     get:
       operationId: getMonitoringEvents
@@ -1080,6 +1092,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SyncResult"
+  /cluster/sync/trigger:
+    post:
+      operationId: triggerClusterSync
+      tags: [cluster]
+      summary: Trigger a full cluster sync
+      responses:
+        "200":
+          description: Sync triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
   /cluster/sync/status:
     get:
       operationId: getClusterSyncStatus
@@ -2150,6 +2174,17 @@ components:
         - intervalSeconds
         - pingThresholdMs
         - autoSwitchEnabled
+    UpdateMonitoringSettingsRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        intervalSeconds:
+          type: integer
+        pingThresholdMs:
+          type: integer
+        autoSwitchEnabled:
+          type: boolean
     MonitoringStatusResponse:
       type: object
       properties:

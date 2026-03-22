@@ -68,6 +68,7 @@ export * from "./trafficStats";
 export * from "./transportFallbackResult";
 export * from "./updateAntiDpiSettingsRequest";
 export * from "./updateClusterConfigRequest";
+export * from "./updateMonitoringSettingsRequest";
 export * from "./updateProfileRequest";
 export * from "./updateServerRequest";
 export * from "./updateUserRequest";

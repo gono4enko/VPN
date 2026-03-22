@@ -289,7 +289,7 @@ async function performSync(node: { id: number; address: string; apiPort: number;
         }),
       });
       if (pushRes.ok) {
-        const pushData = await pushRes.json();
+        const pushData = (await pushRes.json()) as { accepted?: number };
         pushed = pushData.accepted || 0;
       }
     }
@@ -306,7 +306,7 @@ async function performSync(node: { id: number; address: string; apiPort: number;
     });
 
     if (pullRes.ok) {
-      const pullData = await pullRes.json();
+      const pullData = (await pullRes.json()) as { changes?: Array<{ entityType: string; entityId: string; action: string; data?: Record<string, unknown> | null; timestamp: string; sourceNodeId: string }> };
       if (pullData.changes && pullData.changes.length > 0) {
         const result = await applyRemoteChanges(pullData.changes);
         pulled = result.accepted;

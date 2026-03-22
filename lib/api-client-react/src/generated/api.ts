@@ -29,7 +29,6 @@ import type {
   CreateUserRequest,
   DeleteCategoryResult,
   ErrorResponse,
-  FailoverUrlsResponse,
   FingerprintRotationResult,
   HealthStatus,
   HeartbeatRequest,
@@ -63,7 +62,6 @@ import type {
   SyncPushRequest,
   SyncPushResponse,
   SyncResult,
-  SyncTriggerResult,
   TrafficStats,
   TransportFallbackResult,
   UpdateAntiDpiSettingsRequest,
@@ -2950,6 +2948,87 @@ export const useStopMonitoring = <
 };
 
 /**
+ * @summary Run an immediate monitoring check
+ */
+export const getCheckNowUrl = () => {
+  return `/api/monitoring/check-now`;
+};
+
+export const checkNow = async (
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getCheckNowUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getCheckNowMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkNow>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof checkNow>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["checkNow"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof checkNow>>,
+    void
+  > = () => {
+    return checkNow(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CheckNowMutationResult = NonNullable<
+  Awaited<ReturnType<typeof checkNow>>
+>;
+
+export type CheckNowMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Run an immediate monitoring check
+ */
+export const useCheckNow = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof checkNow>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof checkNow>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getCheckNowMutationOptions(options));
+};
+
+/**
  * @summary Get auto-switch event log
  */
 export const getGetMonitoringEventsUrl = () => {
@@ -4992,6 +5071,87 @@ export const useSyncClusterNode = <
 };
 
 /**
+ * @summary Trigger a full cluster sync
+ */
+export const getTriggerClusterSyncUrl = () => {
+  return `/api/cluster/sync/trigger`;
+};
+
+export const triggerClusterSync = async (
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getTriggerClusterSyncUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getTriggerClusterSyncMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof triggerClusterSync>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof triggerClusterSync>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["triggerClusterSync"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof triggerClusterSync>>,
+    void
+  > = () => {
+    return triggerClusterSync(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type TriggerClusterSyncMutationResult = NonNullable<
+  Awaited<ReturnType<typeof triggerClusterSync>>
+>;
+
+export type TriggerClusterSyncMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Trigger a full cluster sync
+ */
+export const useTriggerClusterSync = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof triggerClusterSync>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof triggerClusterSync>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getTriggerClusterSyncMutationOptions(options));
+};
+
+/**
  * @summary Get sync status across all peer nodes
  */
 export const getGetClusterSyncStatusUrl = () => {
@@ -5572,206 +5732,3 @@ export function useGetUserMultiVless<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
-
-export const getTriggerClusterSyncUrl = () => {
-  return `/api/cluster/sync/trigger`;
-};
-
-export const triggerClusterSync = async (
-  options?: RequestInit,
-): Promise<SyncTriggerResult> => {
-  return customFetch<SyncTriggerResult>(getTriggerClusterSyncUrl(), {
-    ...options,
-    method: "POST",
-  });
-};
-
-export const getTriggerClusterSyncMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof triggerClusterSync>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof triggerClusterSync>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationOptions = options?.mutation;
-  const requestOptions = options?.request;
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof triggerClusterSync>>,
-    void
-  > = () => {
-    return triggerClusterSync(requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export function useTriggerClusterSync<
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof triggerClusterSync>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof triggerClusterSync>>,
-  TError,
-  void,
-  TContext
-> {
-  const mutationOptions = getTriggerClusterSyncMutationOptions(options);
-  return useMutation(mutationOptions);
-}
-
-export const getGetFailoverUrlsUrl = () => {
-  return `/api/cluster/failover-urls`;
-};
-
-export const getFailoverUrls = async (
-  options?: RequestInit,
-): Promise<FailoverUrlsResponse> => {
-  return customFetch<FailoverUrlsResponse>(getGetFailoverUrlsUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetFailoverUrlsQueryKey = () => {
-  return [`/api/cluster/failover-urls`] as const;
-};
-
-export const getGetFailoverUrlsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getFailoverUrls>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getFailoverUrls>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-  const queryKey = queryOptions?.queryKey ?? getGetFailoverUrlsQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getFailoverUrls>>> = ({
-    signal,
-  }) => getFailoverUrls({ signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getFailoverUrls>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export function useGetFailoverUrls<
-  TData = Awaited<ReturnType<typeof getFailoverUrls>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getFailoverUrls>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetFailoverUrlsQueryOptions(options);
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-export const getCheckNowUrl = () => {
-  return `/api/monitoring/check-now`;
-};
-
-export const checkNow = async (
-  options?: RequestInit,
-): Promise<MessageResponse> => {
-  return customFetch<MessageResponse>(getCheckNowUrl(), {
-    ...options,
-    method: "POST",
-  });
-};
-
-export const getCheckNowMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof checkNow>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof checkNow>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ["checkNow"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof checkNow>>,
-    void
-  > = () => {
-    return checkNow(requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type CheckNowMutationResult = NonNullable<
-  Awaited<ReturnType<typeof checkNow>>
->;
-
-export type CheckNowMutationError = ErrorType<unknown>;
-
-export const useCheckNow = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof checkNow>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof checkNow>>,
-  TError,
-  void,
-  TContext
-> => {
-  return useMutation(getCheckNowMutationOptions(options));
-};

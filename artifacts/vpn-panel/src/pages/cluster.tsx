@@ -3,8 +3,8 @@ import { Layout } from '@/components/layout';
 import {
   useListServers, useCreateServer, useUpdateServer, useDeleteServer,
   useSetPrimaryServer, useGetClusterStats,
-  useTriggerClusterSync, useGetFailoverUrls,
-  getListServersQueryKey, getGetClusterStatsQueryKey, getGetFailoverUrlsQueryKey,
+  useTriggerClusterSync,
+  getListServersQueryKey, getGetClusterStatsQueryKey,
   pingServer,
   useListClusterNodes, useGetClusterConfig,
   getListClusterNodesQueryKey, getGetClusterConfigQueryKey,
@@ -42,7 +42,7 @@ interface NodeForm {
 }
 
 const defaultServerForm: ServerForm = {
-  name: '', address: '', port: 443, country: '', countryFlag: '🌐', provider: '', maxClients: 100,
+  name: '', address: '', port: 443, country: '', countryFlag: '🌐', provider: '', maxClients: 100, syncUrl: '', syncSecret: '',
 };
 
 const defaultNodeForm: NodeForm = {
@@ -171,8 +171,8 @@ export default function ClusterPage() {
     setSyncingNode(null);
   };
 
-  const openEditServer = (srv: { id: number; name: string; address: string; port: number; country: string; countryFlag: string; provider: string; maxClients: number }) => {
-    setServerForm({ name: srv.name, address: srv.address, port: srv.port, country: srv.country, countryFlag: srv.countryFlag, provider: srv.provider, maxClients: srv.maxClients });
+  const openEditServer = (srv: { id: number; name: string; address: string; port: number; country: string; countryFlag: string; provider: string; maxClients: number; syncUrl?: string | null; syncSecret?: string | null }) => {
+    setServerForm({ name: srv.name, address: srv.address, port: srv.port, country: srv.country, countryFlag: srv.countryFlag, provider: srv.provider, maxClients: srv.maxClients, syncUrl: srv.syncUrl || '', syncSecret: srv.syncSecret || '' });
     setEditServer(srv.id);
   };
 
@@ -574,7 +574,7 @@ export default function ClusterPage() {
         </div>
       )}
 
-      <Modal open={isAddOpen} onClose={() => setIsAddOpen(false)} title="Добавить сервер">
+      <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Добавить сервер">
         <form onSubmit={handleCreateServer} className="space-y-4">
           <CyberInput label="Название" value={serverForm.name} onChange={(e) => setServerForm(f => ({ ...f, name: e.target.value }))} required />
           <CyberInput label="IP-адрес / Домен" value={serverForm.address} onChange={(e) => setServerForm(f => ({ ...f, address: e.target.value }))} required />
@@ -593,7 +593,7 @@ export default function ClusterPage() {
         </form>
       </Modal>
 
-      <Modal open={editServer !== null} onClose={() => { setEditServer(null); setServerForm(defaultServerForm); }} title="Редактировать сервер">
+      <Modal isOpen={editServer !== null} onClose={() => { setEditServer(null); setServerForm(defaultServerForm); }} title="Редактировать сервер">
         <form onSubmit={handleUpdateServer} className="space-y-4">
           <CyberInput label="Название" value={serverForm.name} onChange={(e) => setServerForm(f => ({ ...f, name: e.target.value }))} required />
           <CyberInput label="IP-адрес / Домен" value={serverForm.address} onChange={(e) => setServerForm(f => ({ ...f, address: e.target.value }))} required />
@@ -612,7 +612,7 @@ export default function ClusterPage() {
         </form>
       </Modal>
 
-      <Modal open={isAddNodeOpen} onClose={() => setIsAddNodeOpen(false)} title="Добавить узел кластера">
+      <Modal isOpen={isAddNodeOpen} onClose={() => setIsAddNodeOpen(false)} title="Добавить узел кластера">
         <form onSubmit={handleAddNode} className="space-y-4">
           <CyberInput label="Название узла" value={nodeForm.name} onChange={(e) => setNodeForm(f => ({ ...f, name: e.target.value }))} required />
           <CyberInput label="Адрес (IP / Домен)" value={nodeForm.address} onChange={(e) => setNodeForm(f => ({ ...f, address: e.target.value }))} required />

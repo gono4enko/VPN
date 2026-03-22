@@ -69,6 +69,14 @@
            transition-all duration-300 active:scale-[0.98] inline-flex items-center justify-center gap-2;
   }
   
+  .cyber-button-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .cyber-button-lg {
+    @apply px-8 py-3 text-base;
+  }
+
   .cyber-button-destructive {
     @apply bg-destructive/10 text-destructive border-destructive/50 
            hover:bg-destructive hover:text-destructive-foreground hover:shadow-[0_0_20px_rgba(220,38,38,0.6)];

@@ -478,6 +478,13 @@ export interface MonitoringSettingsResponse {
   autoSwitchEnabled: boolean;
 }
 
+export interface UpdateMonitoringSettingsRequest {
+  enabled?: boolean;
+  intervalSeconds?: number;
+  pingThresholdMs?: number;
+  autoSwitchEnabled?: boolean;
+}
+
 export interface MonitoringStatusResponse {
   isRunning: boolean;
   /** @nullable */
@@ -630,28 +637,4 @@ export type XrayConfigResponseConfig = { [key: string]: unknown };
 export interface XrayConfigResponse {
   config: XrayConfigResponseConfig;
   profile: string;
-}
-
-export interface SyncTriggerResult {
-  status: string;
-  synced: number;
-  errors: number;
-}
-
-export interface FailoverUrlsUserItem {
-  userId: number;
-  userName: string;
-  urlCount: number;
-  combined: string;
-}
-
-export interface FailoverUrlsResponse {
-  users: FailoverUrlsUserItem[];
-}
-
-export interface UserFailoverUrls {
-  userId: number;
-  userName: string;
-  urls: string[];
-  combined: string;
 }

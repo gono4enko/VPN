@@ -16,9 +16,10 @@ export const CyberCard = React.forwardRef<HTMLDivElement, React.HTMLAttributes<H
 CyberCard.displayName = "CyberCard";
 
 type ButtonVariant = 'default' | 'destructive' | 'outline';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
-export const CyberButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }>(
-  ({ className, variant = 'default', ...props }, ref) => {
+export const CyberButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize }>(
+  ({ className, variant = 'default', size = 'md', ...props }, ref) => {
     return (
       <button 
         ref={ref} 
@@ -26,6 +27,8 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLA
           "cyber-button", 
           variant === 'destructive' && "cyber-button-destructive",
           variant === 'outline' && "cyber-button-outline",
+          size === 'sm' && "cyber-button-sm",
+          size === 'lg' && "cyber-button-lg",
           className
         )} 
         {...props} 
@@ -35,20 +38,28 @@ export const CyberButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLA
 );
 CyberButton.displayName = "CyberButton";
 
-export const CyberInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, ...props }, ref) => (
-    <input ref={ref} className={cn("cyber-input", className)} {...props} />
+export const CyberInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { label?: string }>(
+  ({ className, label, ...props }, ref) => (
+    label ? (
+      <div className="flex flex-col gap-1">
+        <label className="text-xs uppercase tracking-wider text-muted-foreground font-display">{label}</label>
+        <input ref={ref} className={cn("cyber-input", className)} {...props} />
+      </div>
+    ) : (
+      <input ref={ref} className={cn("cyber-input", className)} {...props} />
+    )
   )
 );
 CyberInput.displayName = "CyberInput";
 
-export const CyberBadge = ({ className, children, variant = 'default' }: { className?: string, children: React.ReactNode, variant?: 'default' | 'destructive' | 'muted' | 'green' | 'red' }) => (
+export const CyberBadge = ({ className, children, variant = 'default' }: { className?: string, children: React.ReactNode, variant?: 'default' | 'destructive' | 'muted' | 'green' | 'red' | 'yellow' }) => (
   <span className={cn(
     "cyber-badge", 
     variant === 'destructive' && "cyber-badge-destructive",
     variant === 'muted' && "cyber-badge-muted",
     variant === 'green' && "border-green-500/50 bg-green-500/10 text-green-400",
     variant === 'red' && "border-red-500/50 bg-red-500/10 text-red-400",
+    variant === 'yellow' && "border-yellow-500/50 bg-yellow-500/10 text-yellow-400",
     className
   )}>
     {children}
