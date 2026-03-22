@@ -206,31 +206,8 @@ info "Установка зависимостей..."
 rm -f pnpm-lock.yaml
 rm -rf node_modules artifacts/*/node_modules lib/*/node_modules
 
-sed -i.bak '/"@replit\/connectors-sdk"/d' package.json && rm -f package.json.bak
-sed -i.bak '/"@replit\/vite-plugin-cartographer"/d; /"@replit\/vite-plugin-dev-banner"/d; /"@replit\/vite-plugin-runtime-error-modal"/d' artifacts/vpn-panel/package.json && rm -f artifacts/vpn-panel/package.json.bak
-
-info "Удаление Replit-специфичных overrides из pnpm-workspace.yaml..."
-node -e "
-const fs = require('fs');
-const y = fs.readFileSync('pnpm-workspace.yaml','utf8');
-const lines = y.split('\n');
-const out = [];
-let skip = false;
-const blockHeaders = ['overrides:', 'onlyBuiltDependencies:', 'minimumReleaseAgeExclude:'];
-const lineHeaders = ['minimumReleaseAge:'];
-const catalogDel = ['@replit/vite-plugin-cartographer','@replit/vite-plugin-dev-banner','@replit/vite-plugin-runtime-error-modal'];
-for (const line of lines) {
-  if (blockHeaders.some(h => line.startsWith(h))) { skip = true; continue; }
-  if (lineHeaders.some(h => line.startsWith(h))) { continue; }
-  if (skip) {
-    if (line === '' || /^\s/.test(line)) { continue; }
-    skip = false;
-  }
-  if (catalogDel.some(c => line.includes(c))) { continue; }
-  out.push(line);
-}
-fs.writeFileSync('pnpm-workspace.yaml', out.join('\n'));
-"
+info "Удаление Replit-специфичных зависимостей..."
+node scripts/clean-replit-deps.mjs
 
 pnpm install
 
