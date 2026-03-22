@@ -1,7 +1,7 @@
 import { db, vpnServersTable, vpnProfilesTable, vpnUsersTable, routingRulesTable } from "@workspace/db";
-import { eq, gt } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { makeSignedRequest } from "../middleware/hmac-auth";
-import logger from "../lib/logger";
+import { logger } from "../lib/logger";
 
 interface SyncPayload {
   nodeId: number;
@@ -102,16 +102,29 @@ export async function applySyncData(payload: SyncPayload): Promise<{ applied: nu
   return { applied };
 }
 
-async function syncWithPeer(server: typeof vpnServersTable.$inferSelect): Promise<void> {
-  if (!server.syncUrl || !server.syncSecret) return;
+function normalizeSyncBaseUrl(syncUrl: string): string {
+  let base = syncUrl.replace(/\/+$/, "");
+  const suffixes = ["/api/cluster/sync/push", "/api/cluster/sync/pull", "/api/cluster/sync"];
+  for (const suffix of suffixes) {
+    if (base.endsWith(suffix)) {
+      base = base.slice(0, -suffix.length);
+      break;
+    }
+  }
+  return base;
+}
+
+async function syncWithPeer(server: typeof vpnServersTable.$inferSelect): Promise<boolean> {
+  if (!server.syncUrl || !server.syncSecret) return false;
 
   try {
     await db.update(vpnServersTable)
       .set({ syncStatus: "syncing" })
       .where(eq(vpnServersTable.id, server.id));
 
+    const baseUrl = normalizeSyncBaseUrl(server.syncUrl);
     const data = await collectSyncData();
-    const pushUrl = `${server.syncUrl}/api/cluster/sync/push`;
+    const pushUrl = `${baseUrl}/api/cluster/sync/push`;
 
     const response = await makeSignedRequest(pushUrl, server.syncSecret, {
       nodeId: server.id,
@@ -122,7 +135,7 @@ async function syncWithPeer(server: typeof vpnServersTable.$inferSelect): Promis
       throw new Error(`Sync push failed: ${response.status}`);
     }
 
-    const pullUrl = `${server.syncUrl}/api/cluster/sync/pull`;
+    const pullUrl = `${baseUrl}/api/cluster/sync/pull`;
     const pullResponse = await makeSignedRequest(pullUrl, server.syncSecret, {
       nodeId: server.id,
     });
@@ -137,12 +150,14 @@ async function syncWithPeer(server: typeof vpnServersTable.$inferSelect): Promis
       .where(eq(vpnServersTable.id, server.id));
 
     logger.info({ serverId: server.id, serverName: server.name }, "Sync completed with peer");
+    return true;
   } catch (error) {
     await db.update(vpnServersTable)
       .set({ syncStatus: "error" })
       .where(eq(vpnServersTable.id, server.id));
 
     logger.error({ serverId: server.id, error: (error as Error).message }, "Sync failed with peer");
+    return false;
   }
 }
 
@@ -177,10 +192,10 @@ export async function triggerSyncNow(): Promise<{ synced: number; errors: number
   let errors = 0;
 
   for (const server of syncable) {
-    try {
-      await syncWithPeer(server);
+    const ok = await syncWithPeer(server);
+    if (ok) {
       synced++;
-    } catch {
+    } else {
       errors++;
     }
   }

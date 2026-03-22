@@ -229,6 +229,16 @@ export const VpnServerStatus = {
   maintenance: "maintenance",
 } as const;
 
+export type VpnServerSyncStatus =
+  (typeof VpnServerSyncStatus)[keyof typeof VpnServerSyncStatus];
+
+export const VpnServerSyncStatus = {
+  idle: "idle",
+  syncing: "syncing",
+  synced: "synced",
+  error: "error",
+} as const;
+
 export interface VpnServer {
   id: number;
   name: string;
@@ -246,6 +256,9 @@ export interface VpnServer {
   connectedClients: number;
   maxClients: number;
   isPrimary: boolean;
+  syncUrl?: string | null;
+  syncStatus: VpnServerSyncStatus;
+  lastSyncAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -258,6 +271,8 @@ export interface CreateServerRequest {
   countryFlag?: string;
   provider?: string;
   maxClients?: number;
+  syncUrl?: string;
+  syncSecret?: string;
 }
 
 export interface UpdateServerRequest {
@@ -269,6 +284,8 @@ export interface UpdateServerRequest {
   provider?: string;
   maxClients?: number;
   status?: string;
+  syncUrl?: string;
+  syncSecret?: string;
 }
 
 export interface ClusterStats {
@@ -277,6 +294,30 @@ export interface ClusterStats {
   totalClients: number;
   avgPing?: number | null;
   totalBandwidth: number;
+}
+
+export interface SyncTriggerResult {
+  status: string;
+  synced: number;
+  errors: number;
+}
+
+export interface UserFailoverUrls {
+  userId: number;
+  userName: string;
+  urls: string[];
+  combined: string;
+}
+
+export interface FailoverUrlsUserItem {
+  userId: number;
+  userName: string;
+  urlCount: number;
+  combined: string;
+}
+
+export interface FailoverUrlsResponse {
+  users: FailoverUrlsUserItem[];
 }
 
 export interface MonitoringSettingsResponse {

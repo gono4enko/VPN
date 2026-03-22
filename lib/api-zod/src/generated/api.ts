@@ -928,6 +928,9 @@ export const PingServerResponse = zod.object({
   connectedClients: zod.number(),
   maxClients: zod.number(),
   isPrimary: zod.boolean(),
+  syncUrl: zod.string().nullish(),
+  syncStatus: zod.enum(["idle", "syncing", "synced", "error"]),
+  lastSyncAt: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -956,6 +959,9 @@ export const SetPrimaryServerResponse = zod.object({
   connectedClients: zod.number(),
   maxClients: zod.number(),
   isPrimary: zod.boolean(),
+  syncUrl: zod.string().nullish(),
+  syncStatus: zod.enum(["idle", "syncing", "synced", "error"]),
+  lastSyncAt: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -969,4 +975,38 @@ export const GetClusterStatsResponse = zod.object({
   totalClients: zod.number(),
   avgPing: zod.number().nullish(),
   totalBandwidth: zod.number(),
+});
+
+/**
+ * @summary Trigger cluster sync
+ */
+export const SyncTriggerResult = zod.object({
+  status: zod.string(),
+  synced: zod.number(),
+  errors: zod.number(),
+});
+
+/**
+ * @summary Get failover URLs for a user
+ */
+export const GetFailoverUrlsForUserParams = zod.object({
+  userId: zod.coerce.number(),
+});
+
+export const UserFailoverUrls = zod.object({
+  userId: zod.number(),
+  userName: zod.string(),
+  urls: zod.array(zod.string()),
+  combined: zod.string(),
+});
+
+export const FailoverUrlsUserItem = zod.object({
+  userId: zod.number(),
+  userName: zod.string(),
+  urlCount: zod.number(),
+  combined: zod.string(),
+});
+
+export const FailoverUrlsResponse = zod.object({
+  users: zod.array(FailoverUrlsUserItem),
 });

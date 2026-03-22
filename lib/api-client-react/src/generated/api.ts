@@ -25,6 +25,7 @@ import type {
   CreateUserRequest,
   DeleteCategoryResult,
   ErrorResponse,
+  FailoverUrlsResponse,
   FingerprintRotationResult,
   HealthStatus,
   ImportResult,
@@ -50,6 +51,7 @@ import type {
   ServerStatus,
   SpeedtestResult,
   SwitchEvent,
+  SyncTriggerResult,
   TrafficStats,
   TransportFallbackResult,
   UpdateAntiDpiSettingsRequest,
@@ -57,6 +59,7 @@ import type {
   UpdateProfileRequest,
   UpdateServerRequest,
   UpdateUserRequest,
+  UserFailoverUrls,
   VlessUrlResponse,
   VpnProfile,
   VpnServer,
@@ -4557,5 +4560,207 @@ export function useGetClusterStats<
     queryKey: QueryKey;
   };
 
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getTriggerClusterSyncUrl = () => {
+  return `/api/cluster/sync/trigger`;
+};
+
+export const triggerClusterSync = async (
+  options?: RequestInit,
+): Promise<SyncTriggerResult> => {
+  return customFetch<SyncTriggerResult>(getTriggerClusterSyncUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getTriggerClusterSyncMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof triggerClusterSync>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof triggerClusterSync>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationOptions = options?.mutation;
+  const requestOptions = options?.request;
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof triggerClusterSync>>,
+    void
+  > = () => {
+    return triggerClusterSync(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export function useTriggerClusterSync<
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof triggerClusterSync>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof triggerClusterSync>>,
+  TError,
+  void,
+  TContext
+> {
+  const mutationOptions = getTriggerClusterSyncMutationOptions(options);
+  return useMutation(mutationOptions);
+}
+
+export const getGetFailoverUrlsUrl = () => {
+  return `/api/cluster/failover-urls`;
+};
+
+export const getFailoverUrls = async (
+  options?: RequestInit,
+): Promise<FailoverUrlsResponse> => {
+  return customFetch<FailoverUrlsResponse>(getGetFailoverUrlsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetFailoverUrlsQueryKey = () => {
+  return [`/api/cluster/failover-urls`] as const;
+};
+
+export const getGetFailoverUrlsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFailoverUrls>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getFailoverUrls>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetFailoverUrlsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getFailoverUrls>>> = ({
+    signal,
+  }) => getFailoverUrls({ signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFailoverUrls>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export function useGetFailoverUrls<
+  TData = Awaited<ReturnType<typeof getFailoverUrls>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getFailoverUrls>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFailoverUrlsQueryOptions(options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getGetFailoverUrlsForUserUrl = (userId: number) => {
+  return `/api/cluster/failover-urls/${userId}`;
+};
+
+export const getFailoverUrlsForUser = async (
+  userId: number,
+  options?: RequestInit,
+): Promise<UserFailoverUrls> => {
+  return customFetch<UserFailoverUrls>(getGetFailoverUrlsForUserUrl(userId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetFailoverUrlsForUserQueryKey = (userId: number) => {
+  return [`/api/cluster/failover-urls/${userId}`] as const;
+};
+
+export const getGetFailoverUrlsForUserQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+  TError = ErrorType<unknown>,
+>(
+  userId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey =
+    queryOptions?.queryKey ?? getGetFailoverUrlsForUserQueryKey(userId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFailoverUrlsForUser>>
+  > = ({ signal }) =>
+    getFailoverUrlsForUser(userId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!userId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export function useGetFailoverUrlsForUser<
+  TData = Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+  TError = ErrorType<unknown>,
+>(
+  userId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFailoverUrlsForUser>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFailoverUrlsForUserQueryOptions(userId, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
   return { ...query, queryKey: queryOptions.queryKey };
 }

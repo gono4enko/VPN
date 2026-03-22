@@ -139,6 +139,11 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - `GET /api/cluster/servers/:id/ping` — ping server
 - `POST /api/cluster/servers/:id/set-primary` — set primary server
 - `GET /api/cluster/stats` — cluster statistics
+- `POST /api/cluster/sync/push` — push sync data to peer (HMAC-protected)
+- `POST /api/cluster/sync/pull` — pull sync data from peer (HMAC-protected)
+- `POST /api/cluster/sync/trigger` — manually trigger sync with all peers
+- `GET /api/cluster/failover-urls` — failover URLs for all users (base64 combined VLESS)
+- `GET /api/cluster/failover-urls/:userId` — failover URLs for specific user
 - `GET /api/routing/rules` — list routing rules
 - `POST /api/routing/rules` — create routing rule (domain/ip/cidr/regexp, direct/proxy/block)
 - `POST /api/routing/rules/batch` — batch import routing rules
@@ -182,11 +187,26 @@ Key files:
 
 - `vpn_users` — id, uuid, name, status, trafficUsed, trafficLimit, expiresAt, createdAt
 - `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, lastDownloadSpeed, lastCheckAt, isOnline, isActive, transportType, transportPath, transportHost, fragmentEnabled, fragmentLength, fragmentInterval, fingerprintRotation, fingerprintInterval, fingerprintList, lastFingerprintRotation, transportPriority, createdAt
-- `vpn_servers` — id, name, address, port, country, countryFlag, provider, status, lastPing, cpuUsage, memUsage, bandwidthUsed, bandwidthLimit, connectedClients, maxClients, isPrimary, createdAt
+- `vpn_servers` — id, name, address, port, country, countryFlag, provider, status, lastPing, cpuUsage, memUsage, bandwidthUsed, bandwidthLimit, connectedClients, maxClients, isPrimary, syncUrl, syncSecret, lastSyncAt, syncStatus, createdAt
 - `routing_rules` — id, ruleType (domain/ip/cidr/regexp), value, action (direct/proxy/block), description, enabled, priority, category, createdAt
 - `monitoring_settings` — id, enabled, intervalSeconds, pingThresholdMs, autoSwitch, lastCheckAt
 - `switch_event_log` — id, fromProfileId, fromProfileName, toProfileId, toProfileName, reason, pingBefore, pingAfter, createdAt
 - `audit_logs` — id, action, details, timestamp
+
+### Cluster Sync Engine
+
+The system includes a cluster sync engine for multi-node deployments:
+- **HMAC-SHA256 Auth**: Sync endpoints are protected via `x-cluster-hmac` + `x-cluster-timestamp` headers, 5-min drift tolerance
+- **Sync Service**: 60s interval background sync, last-write-wins merge strategy for users/profiles/routing rules
+- **Manual Trigger**: `POST /api/cluster/sync/trigger` triggers immediate sync with all configured peers
+- **Failover URLs**: Auto-generated combined VLESS URLs sorted by availability (online + lowest ping), base64-encoded for subscription clients
+- **Sync URL Normalization**: `syncUrl` stored as base URL; paths are auto-appended (handles both base URL and full-path inputs)
+
+Key files:
+- `artifacts/api-server/src/services/cluster-sync.ts` — Sync engine (collect/apply/trigger)
+- `artifacts/api-server/src/middleware/hmac-auth.ts` — HMAC middleware + signed request helper
+- `artifacts/api-server/src/routes/cluster.ts` — Cluster routes (servers, sync, failover)
+- `artifacts/vpn-panel/src/pages/cluster.tsx` — Cluster UI (servers tab, failover tab, sync button)
 
 ### Required Environment
 
