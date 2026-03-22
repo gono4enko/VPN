@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { db, vpnUsersTable } from "@workspace/db";
+import { db, vpnUsersTable, vpnProfilesTable } from "@workspace/db";
 import { eq, count } from "drizzle-orm";
+import { execSync } from "child_process";
 import {
   GetServerStatusResponse,
   RestartServerResponse,
@@ -44,6 +45,25 @@ const OFFICE_IP = getLocalIp();
 const OFFICE_PORT = process.env.OFFICE_PORT || process.env.XRAY_LISTEN_PORT || "8443";
 const OFFICE_SNI = process.env.OFFICE_SNI || process.env.REALITY_SERVER_NAMES?.split(",")[0]?.trim() || "www.microsoft.com";
 
+let cachedExternalIp: string | null = null;
+let externalIpLastFetch = 0;
+
+async function fetchExternalIp(): Promise<string> {
+  const now = Date.now();
+  if (cachedExternalIp && now - externalIpLastFetch < 300000) {
+    return cachedExternalIp;
+  }
+  try {
+    const resp = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(3000) });
+    const data = (await resp.json()) as { ip: string };
+    cachedExternalIp = data.ip;
+    externalIpLastFetch = now;
+    return data.ip;
+  } catch {
+    return cachedExternalIp || "Не определён";
+  }
+}
+
 router.get("/server/client-ip", async (req, res): Promise<void> => {
   let ip = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim()
     || req.headers["x-real-ip"]?.toString()
@@ -52,7 +72,7 @@ router.get("/server/client-ip", async (req, res): Promise<void> => {
     || "unknown";
 
   if (ip === "::1" || ip === "::ffff:127.0.0.1" || ip === "127.0.0.1") {
-    ip = "localhost";
+    ip = await fetchExternalIp();
   } else if (ip.startsWith("::ffff:")) {
     ip = ip.slice(7);
   }
@@ -60,18 +80,41 @@ router.get("/server/client-ip", async (req, res): Promise<void> => {
   res.json({ ip });
 });
 
+function measurePing(address: string): number | null {
+  try {
+    const cmd = process.platform === "darwin"
+      ? `ping -c 1 -W 2 ${address}`
+      : `ping -c 1 -W 2 ${address}`;
+    const output = execSync(cmd, { timeout: 5000, encoding: "utf-8" });
+    const match = output.match(/time[=<]([\d.]+)\s*ms/);
+    return match ? Math.round(parseFloat(match[1])) : null;
+  } catch {
+    return null;
+  }
+}
+
 router.get("/server/status", async (_req, res): Promise<void> => {
   const users = await db.select({ count: count() }).from(vpnUsersTable).where(eq(vpnUsersTable.status, "active"));
+  const activeProfiles = await db.select().from(vpnProfilesTable).where(eq(vpnProfilesTable.isActive, true));
+  const activeProfile = activeProfiles.length > 0 ? activeProfiles[0] : null;
 
   const xray = getXrayStatus();
+
+  let activeOutbound = "Прямое подключение";
+  let currentPing: number | null = null;
+
+  if (activeProfile) {
+    activeOutbound = activeProfile.name;
+    currentPing = measurePing(activeProfile.address);
+  }
 
   res.json(GetServerStatusResponse.parse({
     running: xray.running,
     uptime: xray.uptime || "0h 0m",
     version: xray.version || "Xray not installed",
-    activeOutbound: "VLESS+Reality Server",
+    activeOutbound,
     connectedClients: users[0]?.count ?? 0,
-    currentPing: null,
+    currentPing,
   }));
 });
 
