@@ -1,4 +1,4 @@
-modules = ["nodejs-24"]
+modules = ["nodejs-24", "postgresql-16"]
 
 [[artifacts]]
 id = "artifacts/api-server"
@@ -34,3 +34,6 @@ OFFICE_PUBLIC_KEY = "REPLACE_WITH_YOUR_REALITY_PUBLIC_KEY"
 OFFICE_SHORT_ID = "REPLACE_WITH_SHORT_ID"
 OFFICE_SNI = "apple.com"
 ADMIN_USERNAME = "admin"
+
+[nix]
+channel = "stable-25_05"
