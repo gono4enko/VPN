@@ -9,10 +9,8 @@
 ## Быстрая установка (одна команда)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<user>/<repo>/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/gono4enko/VPN/main/install.sh | bash
 ```
-
-Замените `<user>/<repo>` на реальный путь к репозиторию на GitHub.
 
 Скрипт автоматически:
 - Определит вашу ОС и архитектуру
@@ -25,7 +23,7 @@ curl -fsSL https://raw.githubusercontent.com/<user>/<repo>/main/install.sh | bas
 
 ### 1. Скачайте архив
 
-Скачайте архив для вашей платформы со страницы [Releases](https://github.com/<user>/<repo>/releases):
+Скачайте архив для вашей платформы со страницы [Releases](https://github.com/gono4enko/VPN/releases):
 
 - `vpn-panel-*-linux-x86_64.tar.gz` — Linux x86_64
 - `vpn-panel-*-linux-arm64.tar.gz` — Linux ARM64

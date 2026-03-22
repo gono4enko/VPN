@@ -4,6 +4,7 @@ import { startMonitor } from "./lib/anti-dpi-monitor";
 import { initMonitoringOnBoot } from "./services/monitoring";
 import { startSyncEngine } from "./services/sync-engine";
 import { initRealityKeys } from "./lib/reality-keys";
+import { initXrayManager } from "./services/xray-manager";
 
 startMonitor();
 startSyncEngine();
@@ -24,6 +25,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 async function start() {
   await initRealityKeys();
+  await initXrayManager();
 
   app.listen(port, (err) => {
     if (err) {

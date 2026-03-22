@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="<user>/<repo>"
+REPO="gono4enko/VPN"
 APP_NAME="vpn-panel"
 DEFAULT_PORT=3000
 

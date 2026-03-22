@@ -119,6 +119,25 @@ export function buildXrayConfig(profile: VpnProfile) {
     log: {
       loglevel: "warning",
     },
+    stats: {},
+    api: {
+      tag: "api",
+      services: ["StatsService"],
+    },
+    policy: {
+      levels: {
+        "0": {
+          statsUserUplink: true,
+          statsUserDownlink: true,
+        },
+      },
+      system: {
+        statsInboundUplink: true,
+        statsInboundDownlink: true,
+        statsOutboundUplink: true,
+        statsOutboundDownlink: true,
+      },
+    },
     inbounds: [
       {
         tag: "socks-in",
@@ -135,11 +154,25 @@ export function buildXrayConfig(profile: VpnProfile) {
         listen: "127.0.0.1",
         protocol: "http",
       },
+      {
+        tag: "api-in",
+        port: 10085,
+        listen: "127.0.0.1",
+        protocol: "dokodemo-door",
+        settings: {
+          address: "127.0.0.1",
+        },
+      },
     ],
     outbounds,
     routing: {
       domainStrategy: "IPIfNonMatch",
       rules: [
+        {
+          type: "field",
+          inboundTag: ["api-in"],
+          outboundTag: "api",
+        },
         {
           type: "field",
           outboundTag: "direct",

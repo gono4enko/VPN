@@ -193,12 +193,35 @@ router.get("/cluster/servers/:id/ping", async (req, res): Promise<void> => {
     return;
   }
 
-  const ping = Math.floor(Math.random() * 200) + 5;
-  const cpu = Math.round(Math.random() * 80 + 5);
-  const mem = Math.round(Math.random() * 70 + 10);
+  const [existingServer] = await db.select().from(vpnServersTable).where(eq(vpnServersTable.id, params.data.id));
+  if (!existingServer) {
+    res.status(404).json({ error: "Server not found" });
+    return;
+  }
+
+  let ping: number;
+  let serverStatus: string;
+  try {
+    const { measureNode } = await import("../services/tcp-ping");
+    const result = await measureNode(existingServer.address, existingServer.port);
+    ping = result.ping ?? -1;
+    serverStatus = result.isOnline ? "online" : "offline";
+  } catch {
+    ping = -1;
+    serverStatus = "offline";
+  }
+
+  const os = await import("os");
+  const cpus = os.cpus();
+  const cpuIdle = cpus.reduce((acc, cpu) => acc + cpu.times.idle, 0) / cpus.length;
+  const cpuTotal = cpus.reduce((acc, cpu) => acc + cpu.times.user + cpu.times.nice + cpu.times.sys + cpu.times.idle + cpu.times.irq, 0) / cpus.length;
+  const cpu = Math.round((1 - cpuIdle / cpuTotal) * 100);
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const mem = Math.round((1 - freeMem / totalMem) * 100);
 
   const [server] = await db.update(vpnServersTable)
-    .set({ lastPing: ping, cpuUsage: cpu, memUsage: mem, status: "online" })
+    .set({ lastPing: ping >= 0 ? ping : null, cpuUsage: cpu, memUsage: mem, status: serverStatus })
     .where(eq(vpnServersTable.id, params.data.id))
     .returning();
 

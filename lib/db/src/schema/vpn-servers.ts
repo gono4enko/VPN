@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, boolean, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, real, bigint } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -30,3 +30,10 @@ export const vpnServersTable = pgTable("vpn_servers", {
 export const insertVpnServerSchema = createInsertSchema(vpnServersTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertVpnServer = z.infer<typeof insertVpnServerSchema>;
 export type VpnServer = typeof vpnServersTable.$inferSelect;
+
+export const trafficSnapshotsTable = pgTable("traffic_snapshots", {
+  id: serial("id").primaryKey(),
+  inboundBytes: bigint("inbound_bytes", { mode: "number" }).notNull().default(0),
+  outboundBytes: bigint("outbound_bytes", { mode: "number" }).notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
