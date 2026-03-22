@@ -135,6 +135,16 @@ router.post("/profiles/import-sub", authMiddleware, async (req, res): Promise<vo
   }
 
   try {
+    const subUrl = new URL(parsed.data.subscriptionUrl);
+    if (!["http:", "https:"].includes(subUrl.protocol)) {
+      res.status(400).json({ error: "Only HTTP(S) URLs are allowed" });
+      return;
+    }
+    const blockedHosts = ["localhost", "127.0.0.1", "0.0.0.0", "::1", "[::1]", "169.254.169.254", "metadata.google.internal"];
+    if (blockedHosts.some(h => subUrl.hostname === h || subUrl.hostname.endsWith(".internal") || subUrl.hostname.endsWith(".local"))) {
+      res.status(400).json({ error: "Internal/private URLs are not allowed" });
+      return;
+    }
     const response = await fetch(parsed.data.subscriptionUrl);
     const text = await response.text();
     const decoded = Buffer.from(text, "base64").toString("utf-8");

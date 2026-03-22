@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Layout } from '@/components/layout';
-import { useAuth } from '@/lib/auth';
 import { 
   useListUsers, useCreateUser, useUpdateUser, useDeleteUser, 
   useBlockUser, useUnblockUser, useGetUserQr, useGetUserVlessUrl,
@@ -13,9 +12,8 @@ import { format } from 'date-fns';
 import type { VpnUser } from '@workspace/api-client-react';
 
 export default function UsersPage() {
-  const { authOpts } = useAuth();
   const queryClient = useQueryClient();
-  const { data: users, isLoading } = useListUsers(authOpts);
+  const { data: users, isLoading } = useListUsers();
   
   const [showUuid, setShowUuid] = useState<Record<number, boolean>>({});
   
@@ -31,13 +29,13 @@ export default function UsersPage() {
   const [formData, setFormData] = useState({ name: '', trafficLimit: 0, expiresAt: '' });
 
   // Mutations
-  const createMutation = useCreateUser(authOpts);
-  const updateMutation = useUpdateUser(authOpts);
-  const deleteMutation = useDeleteUser(authOpts);
-  const blockMutation = useBlockUser(authOpts);
-  const unblockMutation = useUnblockUser(authOpts);
+  const createMutation = useCreateUser();
+  const updateMutation = useUpdateUser();
+  const deleteMutation = useDeleteUser();
+  const blockMutation = useBlockUser();
+  const unblockMutation = useUnblockUser();
 
-  const { data: qrData } = useGetUserQr(activeQrUser || 0, { ...authOpts, query: { enabled: !!activeQrUser } });
+  const { data: qrData } = useGetUserQr(activeQrUser || 0, { query: { enabled: !!activeQrUser } as never });
 
   const toggleUuid = (id: number) => setShowUuid(prev => ({ ...prev, [id]: !prev[id] }));
 

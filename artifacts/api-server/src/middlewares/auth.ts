@@ -20,7 +20,7 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
 
   const token = authHeader.split(" ")[1];
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { username: string };
+    const decoded = jwt.verify(token, JWT_SECRET!) as unknown as { username: string };
     req.user = decoded;
     next();
   } catch {

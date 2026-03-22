@@ -1,16 +1,14 @@
 import React from 'react';
 import { Layout } from '@/components/layout';
-import { useAuth } from '@/lib/auth';
 import { useGetServerConfig, useRestartServer, getGetServerStatusQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { CyberCard, CyberButton, CyberInput } from '@/components/ui/cyber';
 import { Settings2, RefreshCw, Cpu, Network } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { authOpts } = useAuth();
   const queryClient = useQueryClient();
-  const { data: config, isLoading } = useGetServerConfig(authOpts);
-  const restartMutation = useRestartServer(authOpts);
+  const { data: config, isLoading } = useGetServerConfig();
+  const restartMutation = useRestartServer();
 
   const handleRestart = async () => {
     if(confirm("Initiate cold reboot of Xray core? Connections will drop temporarily.")) {

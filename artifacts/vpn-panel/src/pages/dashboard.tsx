@@ -1,6 +1,5 @@
 import React from 'react';
 import { Layout } from '@/components/layout';
-import { useAuth } from '@/lib/auth';
 import { 
   useGetServerStatus, 
   useGetTrafficStats, 
@@ -15,14 +14,13 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { format } from 'date-fns';
 
 export default function Dashboard() {
-  const { authOpts } = useAuth();
   const queryClient = useQueryClient();
   
-  const { data: status, isLoading: statusLoading } = useGetServerStatus({ ...authOpts, query: { refetchInterval: 5000 } });
-  const { data: traffic, isLoading: trafficLoading } = useGetTrafficStats({ ...authOpts, query: { refetchInterval: 10000 } });
+  const { data: status, isLoading: statusLoading } = useGetServerStatus({ query: { refetchInterval: 5000 } as never });
+  const { data: traffic, isLoading: trafficLoading } = useGetTrafficStats({ query: { refetchInterval: 10000 } as never });
   
-  const autoSelectMutation = useAutoSelectProfile(authOpts);
-  const restartMutation = useRestartServer(authOpts);
+  const autoSelectMutation = useAutoSelectProfile();
+  const restartMutation = useRestartServer();
 
   const handleAutoSelect = async () => {
     await autoSelectMutation.mutateAsync();

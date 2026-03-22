@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Layout } from '@/components/layout';
-import { useAuth } from '@/lib/auth';
 import { 
   useListProfiles, useCreateProfile, useImportProfileUrl, useImportProfileSub,
   useDeleteProfile, useActivateProfile, usePingProfile,
@@ -12,9 +11,8 @@ import { Plus, Trash2, Power, Activity, QrCode, Link as LinkIcon, Rss, Keyboard 
 import { QrScanner } from '@/components/qr-scanner';
 
 export default function ProfilesPage() {
-  const { authOpts } = useAuth();
   const queryClient = useQueryClient();
-  const { data: profiles, isLoading } = useListProfiles(authOpts);
+  const { data: profiles, isLoading } = useListProfiles();
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [importTab, setImportTab] = useState<'url' | 'sub' | 'qr' | 'manual'>('url');
@@ -25,12 +23,12 @@ export default function ProfilesPage() {
   const [manualForm, setManualForm] = useState({ name: '', protocol: 'vless', address: '', port: 443 });
 
   // Mutations
-  const createMutation = useCreateProfile(authOpts);
-  const importUrlMutation = useImportProfileUrl(authOpts);
-  const importSubMutation = useImportProfileSub(authOpts);
-  const deleteMutation = useDeleteProfile(authOpts);
-  const activateMutation = useActivateProfile(authOpts);
-  const pingMutation = usePingProfile(0, authOpts); // dummy init, called manually below
+  const createMutation = useCreateProfile();
+  const importUrlMutation = useImportProfileUrl();
+  const importSubMutation = useImportProfileSub();
+  const deleteMutation = useDeleteProfile();
+  const activateMutation = useActivateProfile();
+  const pingMutation = usePingProfile(0);
 
   const handleImportUrl = async (e?: React.FormEvent, customUrl?: string) => {
     e?.preventDefault();
