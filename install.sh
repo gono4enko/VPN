@@ -207,7 +207,50 @@ rm -f pnpm-lock.yaml
 rm -rf node_modules artifacts/*/node_modules lib/*/node_modules
 
 info "Удаление Replit-специфичных зависимостей..."
-node scripts/clean-replit-deps.mjs
+
+cat > pnpm-workspace.yaml << 'CLEANEOF'
+packages:
+  - artifacts/*
+  - lib/*
+  - lib/integrations/*
+  - scripts
+
+autoInstallPeers: false
+
+catalog:
+  '@tailwindcss/vite': ^4.1.14
+  '@tanstack/react-query': ^5.90.21
+  '@types/node': ^25.3.3
+  '@types/react': ^19.2.0
+  '@types/react-dom': ^19.2.0
+  '@vitejs/plugin-react': ^5.0.4
+  class-variance-authority: ^0.7.1
+  clsx: 2.1.1
+  drizzle-orm: ^0.45.1
+  framer-motion: 12.35.1
+  lucide-react: 0.545.0
+  react: 19.1.0
+  react-dom: 19.1.0
+  tailwind-merge: 3.5.0
+  tailwindcss: ^4.1.14
+  tsx: ^4.21.0
+  vite: ^7.3.0
+  zod: ^3.25.76
+CLEANEOF
+ok "pnpm-workspace.yaml перезаписан (чистая версия)"
+
+node -e "
+var f=require('fs');
+var p='package.json';
+var pkg=JSON.parse(f.readFileSync(p,'utf8'));
+if(pkg.dependencies)delete pkg.dependencies['@replit/connectors-sdk'];
+f.writeFileSync(p,JSON.stringify(pkg,null,2)+'\n');
+var v='artifacts/vpn-panel/package.json';
+var vp=JSON.parse(f.readFileSync(v,'utf8'));
+['@replit/vite-plugin-cartographer','@replit/vite-plugin-dev-banner','@replit/vite-plugin-runtime-error-modal'].forEach(function(d){if(vp.devDependencies)delete vp.devDependencies[d];if(vp.dependencies)delete vp.dependencies[d];});
+f.writeFileSync(v,JSON.stringify(vp,null,2)+'\n');
+console.log('package.json files cleaned');
+" || true
 
 pnpm install
 
