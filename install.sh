@@ -212,19 +212,21 @@ sed -i.bak '/"@replit\/vite-plugin-cartographer"/d; /"@replit\/vite-plugin-dev-b
 info "Удаление Replit-специфичных overrides из pnpm-workspace.yaml..."
 node -e "
 const fs = require('fs');
-let y = fs.readFileSync('pnpm-workspace.yaml','utf8');
+const y = fs.readFileSync('pnpm-workspace.yaml','utf8');
 const lines = y.split('\n');
 const out = [];
-let inOverrides = false;
+let skip = false;
+const blockHeaders = ['overrides:', 'onlyBuiltDependencies:', 'minimumReleaseAgeExclude:'];
+const lineHeaders = ['minimumReleaseAge:'];
+const catalogDel = ['@replit/vite-plugin-cartographer','@replit/vite-plugin-dev-banner','@replit/vite-plugin-runtime-error-modal'];
 for (const line of lines) {
-  if (/^overrides:/.test(line)) { inOverrides = true; continue; }
-  if (inOverrides && /^\s/.test(line)) { continue; }
-  if (inOverrides && !/^\s/.test(line)) { inOverrides = false; }
-  if (/^onlyBuiltDependencies:/.test(line)) { inOverrides = true; continue; }
-  if (/^minimumReleaseAge/.test(line)) { continue; }
-  if (/^minimumReleaseAgeExclude/.test(line)) { inOverrides = true; continue; }
-  const catalogs = ['@replit/vite-plugin-cartographer','@replit/vite-plugin-dev-banner','@replit/vite-plugin-runtime-error-modal'];
-  if (catalogs.some(c => line.includes(c))) { continue; }
+  if (blockHeaders.some(h => line.startsWith(h))) { skip = true; continue; }
+  if (lineHeaders.some(h => line.startsWith(h))) { continue; }
+  if (skip) {
+    if (line === '' || /^\s/.test(line)) { continue; }
+    skip = false;
+  }
+  if (catalogDel.some(c => line.includes(c))) { continue; }
   out.push(line);
 }
 fs.writeFileSync('pnpm-workspace.yaml', out.join('\n'));
