@@ -98,7 +98,11 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - Routes: `/login`, `/` (dashboard), `/users`, `/profiles`, `/settings`
 - Auth: JWT stored in localStorage (`vpn_token`), `AuthProvider` context in `src/lib/auth.tsx` sets `setAuthTokenGetter` for auto-attaching bearer tokens
 - Custom UI components: `src/components/ui/cyber.tsx` (CyberCard, CyberButton, CyberBadge, Modal, CyberInput)
+- Tooltips: `src/components/ui/tooltip.tsx` — CyberTooltip component wrapping Radix UI tooltips with cyberpunk styling, TooltipProvider in App.tsx
 - Layout: `src/components/layout.tsx` — sidebar with XRAY branding and nav links
+- Localization: All UI text is in Russian with cyberpunk-style naming (e.g., "Сеть_Ядро", "Матрица_Пользователей", "Исходящие_Узлы")
+- IP Detection: Dashboard shows client's public IP address, auto-detected via `GET /api/server/client-ip`
+- VLESS defaults: Generated VLESS URLs point to happ.su server by default (configurable via OFFICE_IP, OFFICE_SNI env vars)
 - Credentials: username from `ADMIN_USERNAME` env var (default: `admin`), password from `ADMIN_PASSWORD` Replit Secret
 
 ### API Routes (artifacts/api-server)
@@ -107,6 +111,7 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - `POST /api/auth/login` — JWT login
 - `POST /api/auth/logout` — logout (invalidate session)
 - `GET /api/auth/me` — current user info (requires auth)
+- `GET /api/server/client-ip` — client IP detection (no auth required)
 - `GET /api/server/status` — simulated server status (requires auth)
 - `POST /api/server/restart` — simulated restart (requires auth)
 - `GET /api/server/config` — server configuration (requires auth)

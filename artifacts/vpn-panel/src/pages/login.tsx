@@ -24,7 +24,7 @@ export default function Login() {
       login(data.token);
       setLocation('/');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Authentication failed. Access denied.';
+      const message = err instanceof Error ? err.message : 'Ошибка аутентификации. Доступ запрещён.';
       setError(message);
     }
   };
@@ -35,7 +35,7 @@ export default function Login() {
         <img 
           src={`${import.meta.env.BASE_URL}images/cyber-bg.png`} 
           className="w-full h-full object-cover opacity-30 mix-blend-screen" 
-          alt="Cyber background" 
+          alt="Кибер-фон" 
         />
         <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" />
       </div>
@@ -51,19 +51,19 @@ export default function Login() {
             <div className="w-16 h-16 bg-primary/10 border-2 border-primary flex items-center justify-center text-primary mb-4 shadow-[0_0_20px_rgba(0,212,170,0.3)]">
               <TerminalSquare className="w-8 h-8" />
             </div>
-            <h1 className="text-3xl font-bold font-display text-primary tracking-[0.2em] uppercase">Sys_Auth</h1>
-            <p className="text-muted-foreground font-mono text-xs mt-2 uppercase tracking-widest">VPN Control Matrix</p>
+            <h1 className="text-3xl font-bold font-display text-primary tracking-[0.2em] uppercase">Авторизация</h1>
+            <p className="text-muted-foreground font-mono text-xs mt-2 uppercase tracking-widest">Матрица Управления VPN</p>
           </div>
 
           {error && (
             <div className="mb-6 p-3 bg-destructive/10 border border-destructive/50 text-destructive font-mono text-sm">
-              <span className="font-bold mr-2">[ERROR]</span> {error}
+              <span className="font-bold mr-2">[ОШИБКА]</span> {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Operator_ID</label>
+              <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Идентификатор</label>
               <CyberInput 
                 type="text" 
                 value={username} 
@@ -74,7 +74,7 @@ export default function Login() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Passkey</label>
+              <label className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Пароль</label>
               <div className="relative">
                 <CyberInput 
                   type="password" 
@@ -92,7 +92,7 @@ export default function Login() {
               className="w-full mt-4 h-12 text-lg shadow-[0_0_15px_rgba(0,212,170,0.3)]"
               disabled={loginMutation.isPending}
             >
-              {loginMutation.isPending ? 'Authenticating...' : 'Initialize Connection'}
+              {loginMutation.isPending ? 'Авторизация...' : 'Подключиться'}
             </CyberButton>
           </form>
         </CyberCard>

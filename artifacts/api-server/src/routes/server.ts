@@ -10,11 +10,16 @@ import {
 
 const router: IRouter = Router();
 
-const OFFICE_IP = process.env.OFFICE_IP || "0.0.0.0";
+const OFFICE_IP = process.env.OFFICE_IP || "happ.su";
 const OFFICE_PORT = process.env.OFFICE_PORT || "443";
-const OFFICE_SNI = process.env.OFFICE_SNI || "apple.com";
+const OFFICE_SNI = process.env.OFFICE_SNI || "happ.su";
 
 const startTime = Date.now();
+
+router.get("/server/client-ip", async (req, res): Promise<void> => {
+  const ip = req.ip || 'unknown';
+  res.json({ ip });
+});
 
 router.get("/server/status", async (_req, res): Promise<void> => {
   const users = await db.select({ count: count() }).from(vpnUsersTable).where(eq(vpnUsersTable.status, "active"));

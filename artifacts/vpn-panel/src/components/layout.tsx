@@ -2,12 +2,13 @@ import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { LayoutDashboard, Users, Globe, Settings, TerminalSquare } from 'lucide-react';
 import { cn } from './ui/cyber';
+import { CyberTooltip } from './ui/tooltip';
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/users", label: "Users", icon: Users },
-  { href: "/profiles", label: "Profiles", icon: Globe },
-  { href: "/settings", label: "System", icon: Settings },
+  { href: "/", label: "Панель", icon: LayoutDashboard, tooltip: "Главная панель мониторинга системы" },
+  { href: "/users", label: "Пользователи", icon: Users, tooltip: "Управление клиентскими аккаунтами VPN" },
+  { href: "/profiles", label: "Профили", icon: Globe, tooltip: "Внешние маршруты и узлы подключения" },
+  { href: "/settings", label: "Система", icon: Settings, tooltip: "Конфигурация и параметры сервера" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -19,7 +20,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <img 
           src={`${import.meta.env.BASE_URL}images/cyber-bg.png`} 
           className="w-full h-full object-cover opacity-15 mix-blend-screen" 
-          alt="Cyber background" 
+          alt="Кибер-фон" 
         />
         <div className="absolute inset-0 bg-background/80 backdrop-blur-[2px]" />
       </div>
@@ -31,7 +32,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-primary font-display tracking-widest leading-none shadow-primary">XRAY</h1>
-            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Control_Panel</p>
+            <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Панель_Управления</p>
           </div>
         </div>
 
@@ -39,17 +40,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {navItems.map((item) => {
             const isActive = location === item.href;
             return (
-              <Link key={item.href} href={item.href} className="block">
-                <div className={cn(
-                  "flex items-center gap-3 px-4 py-3 font-display uppercase tracking-wider transition-all duration-300 border-l-2",
-                  isActive 
-                    ? "bg-primary/10 text-primary border-primary shadow-[inset_4px_0_0_rgba(0,212,170,1)]" 
-                    : "text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground hover:border-primary/50"
-                )}>
-                  <item.icon className="w-5 h-5" />
-                  {item.label}
-                </div>
-              </Link>
+              <CyberTooltip key={item.href} text={item.tooltip}>
+                <Link href={item.href} className="block">
+                  <div className={cn(
+                    "flex items-center gap-3 px-4 py-3 font-display uppercase tracking-wider transition-all duration-300 border-l-2",
+                    isActive 
+                      ? "bg-primary/10 text-primary border-primary shadow-[inset_4px_0_0_rgba(0,212,170,1)]" 
+                      : "text-muted-foreground border-transparent hover:bg-white/5 hover:text-foreground hover:border-primary/50"
+                  )}>
+                    <item.icon className="w-5 h-5" />
+                    {item.label}
+                  </div>
+                </Link>
+              </CyberTooltip>
             );
           })}
         </nav>
