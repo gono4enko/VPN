@@ -103,27 +103,30 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 
 ### API Routes (artifacts/api-server)
 
+- `GET /api/health` — health check
 - `POST /api/auth/login` — JWT login
-- `GET /api/server/status` — simulated server status
-- `POST /api/server/restart` — simulated restart
-- `GET /api/server/config` — server configuration
-- `GET /api/users` — list VPN users
-- `POST /api/users` — create user (auto-generates UUID)
-- `PUT /api/users/:id` — update user
-- `DELETE /api/users/:id` — delete user
-- `POST /api/users/:id/block` / `POST /api/users/:id/unblock` — block/unblock
-- `GET /api/users/:id/qr` — QR code for VLESS URL
-- `GET /api/users/:id/vless-url` — VLESS connection URL
-- `GET /api/profiles` — list outbound profiles
-- `POST /api/profiles` — create profile
-- `POST /api/profiles/import-url` — import from VLESS URL
-- `POST /api/profiles/import-sub` — import from subscription
-- `POST /api/profiles/:id/activate` — activate profile
-- `GET /api/profiles/:id/ping` — ping profile
-- `DELETE /api/profiles/:id` — delete profile
-- `POST /api/profiles/auto-select` — auto-select fastest
-- `GET /api/traffic/stats` — traffic statistics
-- `GET /api/speedtest` — speed test
+- `POST /api/auth/logout` — logout (invalidate session)
+- `GET /api/auth/me` — current user info (requires auth)
+- `GET /api/server/status` — simulated server status (requires auth)
+- `POST /api/server/restart` — simulated restart (requires auth)
+- `GET /api/server/config` — server configuration (requires auth)
+- `GET /api/users` — list VPN users (requires auth)
+- `POST /api/users` — create user with auto-generated UUID (requires auth)
+- `PUT /api/users/:id` — update user (requires auth)
+- `DELETE /api/users/:id` — delete user (requires auth)
+- `POST /api/users/:id/block` / `POST /api/users/:id/unblock` — block/unblock (requires auth)
+- `GET /api/users/:id/qr` — QR code for VLESS URL (requires auth)
+- `GET /api/users/:id/vless-url` — VLESS connection URL (requires auth)
+- `GET /api/profiles` — list outbound profiles (requires auth)
+- `POST /api/profiles` — create profile (VLESS/Shadowsocks/WireGuard) (requires auth)
+- `POST /api/profiles/import-url` — import from VLESS URL (requires auth)
+- `POST /api/profiles/import-sub` — import from subscription URL with SSRF protection (requires auth)
+- `POST /api/profiles/:id/activate` — activate profile (requires auth)
+- `GET /api/profiles/:id/ping` — ping profile (requires auth)
+- `DELETE /api/profiles/:id` — delete profile (requires auth)
+- `POST /api/profiles/auto-select` — auto-select fastest profile (requires auth)
+- `GET /api/traffic/stats` — traffic statistics (requires auth)
+- `GET /api/speedtest` — speed test (requires auth)
 
 ### Database Schema
 
