@@ -19,6 +19,10 @@ export const vpnServersTable = pgTable("vpn_servers", {
   connectedClients: integer("connected_clients").notNull().default(0),
   maxClients: integer("max_clients").notNull().default(100),
   isPrimary: boolean("is_primary").notNull().default(false),
+  syncUrl: text("sync_url"),
+  syncSecret: text("sync_secret"),
+  lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+  syncStatus: text("sync_status").notNull().default("idle"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

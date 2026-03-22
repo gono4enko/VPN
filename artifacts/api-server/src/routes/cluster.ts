@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, vpnServersTable } from "@workspace/db";
+import { db, vpnServersTable, vpnProfilesTable, vpnUsersTable } from "@workspace/db";
 import type { VpnServer } from "@workspace/db/schema";
 import {
   ListServersResponse,
@@ -15,8 +15,12 @@ import {
   SetPrimaryServerResponse,
   GetClusterStatsResponse,
 } from "@workspace/api-zod";
+import { hmacAuthMiddleware } from "../middleware/hmac-auth";
+import { collectSyncData, applySyncData, triggerSyncNow } from "../services/cluster-sync";
 
 const router: IRouter = Router();
+
+const CLUSTER_SECRET = process.env.CLUSTER_SYNC_SECRET || null;
 
 function formatServer(server: VpnServer) {
   return {
@@ -36,6 +40,9 @@ function formatServer(server: VpnServer) {
     connectedClients: server.connectedClients,
     maxClients: server.maxClients,
     isPrimary: server.isPrimary,
+    syncUrl: server.syncUrl || null,
+    syncStatus: server.syncStatus,
+    lastSyncAt: server.lastSyncAt ? server.lastSyncAt.toISOString() : null,
     createdAt: server.createdAt.toISOString(),
     updatedAt: server.updatedAt.toISOString(),
   };
@@ -43,7 +50,7 @@ function formatServer(server: VpnServer) {
 
 router.get("/cluster/servers", async (_req, res): Promise<void> => {
   const servers = await db.select().from(vpnServersTable).orderBy(vpnServersTable.createdAt);
-  res.json(ListServersResponse.parse(servers.map(formatServer)));
+  res.json(servers.map(formatServer));
 });
 
 router.post("/cluster/servers", async (req, res): Promise<void> => {
@@ -61,6 +68,8 @@ router.post("/cluster/servers", async (req, res): Promise<void> => {
     countryFlag: parsed.data.countryFlag ?? "🌐",
     provider: parsed.data.provider ?? "",
     maxClients: parsed.data.maxClients ?? 100,
+    syncUrl: (req.body as Record<string, unknown>).syncUrl as string || null,
+    syncSecret: (req.body as Record<string, unknown>).syncSecret as string || null,
     status: "offline",
   }).returning();
 
@@ -95,6 +104,10 @@ router.put("/cluster/servers/:id", async (req, res): Promise<void> => {
   if (body.data.maxClients !== undefined) updateData.maxClients = body.data.maxClients;
   if (body.data.status !== undefined) updateData.status = body.data.status;
 
+  const rawBody = req.body as Record<string, unknown>;
+  if (rawBody.syncUrl !== undefined) updateData.syncUrl = rawBody.syncUrl || null;
+  if (rawBody.syncSecret !== undefined) updateData.syncSecret = rawBody.syncSecret || null;
+
   const [server] = await db.update(vpnServersTable)
     .set(updateData)
     .where(eq(vpnServersTable.id, params.data.id))
@@ -105,7 +118,7 @@ router.put("/cluster/servers/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(UpdateServerResponse.parse(formatServer(server)));
+  res.json(formatServer(server));
 });
 
 router.delete("/cluster/servers/:id", async (req, res): Promise<void> => {
@@ -140,7 +153,7 @@ router.get("/cluster/servers/:id/ping", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(PingServerResponse.parse(formatServer(server)));
+  res.json(formatServer(server));
 });
 
 router.post("/cluster/servers/:id/set-primary", async (req, res): Promise<void> => {
@@ -166,7 +179,7 @@ router.post("/cluster/servers/:id/set-primary", async (req, res): Promise<void> 
     .where(eq(vpnServersTable.id, params.data.id))
     .returning();
 
-  res.json(SetPrimaryServerResponse.parse(formatServer(server!)));
+  res.json(formatServer(server!));
 });
 
 router.get("/cluster/stats", async (_req, res): Promise<void> => {
@@ -181,6 +194,144 @@ router.get("/cluster/stats", async (_req, res): Promise<void> => {
     avgPing: pings.length > 0 ? Math.round(pings.reduce((a, b) => a + b, 0) / pings.length) : null,
     totalBandwidth: servers.reduce((sum, s) => sum + s.bandwidthUsed, 0),
   }));
+});
+
+const hmacGuard = hmacAuthMiddleware(() => CLUSTER_SECRET);
+
+router.post("/cluster/sync/push", hmacGuard, async (req, res): Promise<void> => {
+  try {
+    const result = await applySyncData(req.body);
+    res.json({ status: "ok", ...result });
+  } catch (error) {
+    res.status(500).json({ error: "Sync push failed", detail: (error as Error).message });
+  }
+});
+
+router.post("/cluster/sync/pull", hmacGuard, async (_req, res): Promise<void> => {
+  try {
+    const data = await collectSyncData();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: "Sync pull failed", detail: (error as Error).message });
+  }
+});
+
+router.post("/cluster/sync/trigger", async (_req, res): Promise<void> => {
+  try {
+    const result = await triggerSyncNow();
+    res.json({ status: "ok", ...result });
+  } catch (error) {
+    res.status(500).json({ error: "Sync trigger failed", detail: (error as Error).message });
+  }
+});
+
+router.get("/cluster/failover-urls/:userId", async (req, res): Promise<void> => {
+  const userId = parseInt(req.params.userId, 10);
+  if (isNaN(userId)) {
+    res.status(400).json({ error: "Invalid user ID" });
+    return;
+  }
+
+  const users = await db.select().from(vpnUsersTable).where(eq(vpnUsersTable.id, userId));
+  if (users.length === 0) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  const user = users[0];
+
+  const profiles = await db.select().from(vpnProfilesTable).orderBy(vpnProfilesTable.createdAt);
+  const onlineProfiles = profiles.filter(p => p.isOnline !== false);
+  const targetProfiles = onlineProfiles.length > 0 ? onlineProfiles : profiles;
+
+  if (targetProfiles.length === 0) {
+    res.json({ userId: user.id, userName: user.name, urls: [], combined: "" });
+    return;
+  }
+
+  const sorted = [...targetProfiles].sort((a, b) => {
+    if (a.isActive && !b.isActive) return -1;
+    if (!a.isActive && b.isActive) return 1;
+    const pa = a.lastPing ?? 9999;
+    const pb = b.lastPing ?? 9999;
+    return pa - pb;
+  });
+
+  const urls = sorted.map(p => {
+    const params = new URLSearchParams();
+    if (p.security) params.set("security", p.security);
+    if (p.flow) params.set("flow", p.flow);
+    if (p.sni) params.set("sni", p.sni);
+    if (p.publicKey) params.set("pbk", p.publicKey);
+    const sid = (p.shortId || "").split("#")[0];
+    if (sid) params.set("sid", sid);
+    if (p.fingerprint) params.set("fp", p.fingerprint);
+    const transportType = p.transportType || "tcp";
+    params.set("type", transportType);
+    if (transportType === "ws" && p.transportPath) params.set("path", p.transportPath);
+    if (transportType === "ws" && p.transportHost) params.set("host", p.transportHost);
+    if (transportType === "grpc" && p.transportPath) params.set("serviceName", p.transportPath);
+
+    const fragment = encodeURIComponent(p.name || p.address);
+    return `vless://${user.uuid}@${p.address}:${p.port}?${params.toString()}#${fragment}`;
+  });
+
+  const combined = Buffer.from(urls.join("\n")).toString("base64");
+
+  res.json({
+    userId: user.id,
+    userName: user.name,
+    urls,
+    combined,
+  });
+});
+
+router.get("/cluster/failover-urls", async (_req, res): Promise<void> => {
+  const users = await db.select().from(vpnUsersTable);
+  const profiles = await db.select().from(vpnProfilesTable).orderBy(vpnProfilesTable.createdAt);
+
+  if (profiles.length === 0 || users.length === 0) {
+    res.json({ users: [] });
+    return;
+  }
+
+  const onlineProfiles = profiles.filter(p => p.isOnline !== false);
+  const targetProfiles = onlineProfiles.length > 0 ? onlineProfiles : profiles;
+
+  const sorted = [...targetProfiles].sort((a, b) => {
+    if (a.isActive && !b.isActive) return -1;
+    if (!a.isActive && b.isActive) return 1;
+    return (a.lastPing ?? 9999) - (b.lastPing ?? 9999);
+  });
+
+  const result = users.map(user => {
+    const urls = sorted.map(p => {
+      const params = new URLSearchParams();
+      if (p.security) params.set("security", p.security);
+      if (p.flow) params.set("flow", p.flow);
+      if (p.sni) params.set("sni", p.sni);
+      if (p.publicKey) params.set("pbk", p.publicKey);
+      const sid = (p.shortId || "").split("#")[0];
+      if (sid) params.set("sid", sid);
+      if (p.fingerprint) params.set("fp", p.fingerprint);
+      const transportType = p.transportType || "tcp";
+      params.set("type", transportType);
+      if (transportType === "ws" && p.transportPath) params.set("path", p.transportPath);
+      if (transportType === "ws" && p.transportHost) params.set("host", p.transportHost);
+      if (transportType === "grpc" && p.transportPath) params.set("serviceName", p.transportPath);
+
+      const fragment = encodeURIComponent(p.name || p.address);
+      return `vless://${user.uuid}@${p.address}:${p.port}?${params.toString()}#${fragment}`;
+    });
+
+    return {
+      userId: user.id,
+      userName: user.name,
+      urlCount: urls.length,
+      combined: Buffer.from(urls.join("\n")).toString("base64"),
+    };
+  });
+
+  res.json({ users: result });
 });
 
 export default router;

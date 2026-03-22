@@ -999,6 +999,48 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ClusterStats"
+  /cluster/sync/trigger:
+    post:
+      operationId: triggerClusterSync
+      tags: [cluster]
+      summary: Manually trigger sync with all peer nodes
+      responses:
+        "200":
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SyncTriggerResult"
+  /cluster/failover-urls:
+    get:
+      operationId: getFailoverUrls
+      tags: [cluster]
+      summary: Get multi-server failover VLESS URLs for all users
+      responses:
+        "200":
+          description: Failover URLs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FailoverUrlsResponse"
+  /cluster/failover-urls/{userId}:
+    get:
+      operationId: getFailoverUrlsForUser
+      tags: [cluster]
+      summary: Get multi-server failover VLESS URLs for a specific user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Failover URLs for user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserFailoverUrls"
 components:
   schemas:
     HealthStatus:
@@ -1503,6 +1545,15 @@ components:
           type: integer
         isPrimary:
           type: boolean
+        syncUrl:
+          type: string
+          nullable: true
+        syncStatus:
+          type: string
+          enum: [idle, syncing, synced, error]
+        lastSyncAt:
+          type: string
+          nullable: true
         createdAt:
           type: string
         updatedAt:
@@ -1521,6 +1572,7 @@ components:
         - connectedClients
         - maxClients
         - isPrimary
+        - syncStatus
         - createdAt
         - updatedAt
     CreateServerRequest:
@@ -1542,6 +1594,10 @@ components:
         maxClients:
           type: integer
           default: 100
+        syncUrl:
+          type: string
+        syncSecret:
+          type: string
       required:
         - name
         - address
@@ -1564,6 +1620,10 @@ components:
           type: integer
         status:
           type: string
+        syncUrl:
+          type: string
+        syncSecret:
+          type: string
     ClusterStats:
       type: object
       properties:
@@ -1583,6 +1643,60 @@ components:
         - onlineServers
         - totalClients
         - totalBandwidth
+    SyncTriggerResult:
+      type: object
+      properties:
+        status:
+          type: string
+        synced:
+          type: integer
+        errors:
+          type: integer
+      required:
+        - status
+        - synced
+        - errors
+    UserFailoverUrls:
+      type: object
+      properties:
+        userId:
+          type: integer
+        userName:
+          type: string
+        urls:
+          type: array
+          items:
+            type: string
+        combined:
+          type: string
+      required:
+        - userId
+        - userName
+        - urls
+        - combined
+    FailoverUrlsResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            type: object
+            properties:
+              userId:
+                type: integer
+              userName:
+                type: string
+              urlCount:
+                type: integer
+              combined:
+                type: string
+            required:
+              - userId
+              - userName
+              - urlCount
+              - combined
+      required:
+        - users
     MonitoringSettingsResponse:
       type: object
       properties:

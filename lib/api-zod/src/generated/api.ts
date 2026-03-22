@@ -827,6 +827,9 @@ export const ListServersResponseItem = zod.object({
   connectedClients: zod.number(),
   maxClients: zod.number(),
   isPrimary: zod.boolean(),
+  syncUrl: zod.string().nullish(),
+  syncStatus: zod.enum(["idle", "syncing", "synced", "error"]),
+  lastSyncAt: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });
@@ -846,6 +849,8 @@ export const CreateServerBody = zod.object({
   countryFlag: zod.string().optional(),
   provider: zod.string().optional(),
   maxClients: zod.number().default(createServerBodyMaxClientsDefault),
+  syncUrl: zod.string().optional(),
+  syncSecret: zod.string().optional(),
 });
 
 /**
@@ -864,6 +869,8 @@ export const UpdateServerBody = zod.object({
   provider: zod.string().optional(),
   maxClients: zod.number().optional(),
   status: zod.string().optional(),
+  syncUrl: zod.string().optional(),
+  syncSecret: zod.string().optional(),
 });
 
 export const UpdateServerResponse = zod.object({
@@ -883,6 +890,9 @@ export const UpdateServerResponse = zod.object({
   connectedClients: zod.number(),
   maxClients: zod.number(),
   isPrimary: zod.boolean(),
+  syncUrl: zod.string().nullish(),
+  syncStatus: zod.enum(["idle", "syncing", "synced", "error"]),
+  lastSyncAt: zod.string().nullish(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
 });

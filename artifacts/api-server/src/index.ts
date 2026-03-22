@@ -2,8 +2,10 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { startMonitor } from "./lib/anti-dpi-monitor";
 import { initMonitoringOnBoot } from "./services/monitoring";
+import { startClusterSync } from "./services/cluster-sync";
 
 startMonitor();
+startClusterSync();
 
 const rawPort = process.env["PORT"];
 
