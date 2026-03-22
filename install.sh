@@ -205,6 +205,23 @@ ensure_xray
 
 step "7/8 — Клонирование и сборка"
 
+info "Остановка предыдущего экземпляра (если есть)..."
+OLD_PID=$(pgrep -f "dist/index.mjs" || true)
+if [ -n "$OLD_PID" ]; then
+  kill $OLD_PID 2>/dev/null || true
+  sleep 1
+  kill -9 $OLD_PID 2>/dev/null || true
+  ok "Старый процесс (PID: $OLD_PID) остановлен"
+else
+  info "Запущенных процессов не найдено"
+fi
+
+XRAY_PID=$(pgrep -f "xray run" || true)
+if [ -n "$XRAY_PID" ]; then
+  kill $XRAY_PID 2>/dev/null || true
+  ok "Xray процесс (PID: $XRAY_PID) остановлен"
+fi
+
 if [ -d "$INSTALL_DIR/.git" ]; then
   info "Обновление существующей установки в $INSTALL_DIR..."
   cd "$INSTALL_DIR"

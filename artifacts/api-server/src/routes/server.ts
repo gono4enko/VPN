@@ -17,12 +17,46 @@ import {
 
 const router: IRouter = Router();
 
-const OFFICE_IP = process.env.OFFICE_IP || "happ.su";
-const OFFICE_PORT = process.env.OFFICE_PORT || "443";
-const OFFICE_SNI = process.env.OFFICE_SNI || "happ.su";
+function getLocalIp(): string {
+  if (process.env.OFFICE_IP) return process.env.OFFICE_IP;
+  try {
+    const os = require("os");
+    const nets = os.networkInterfaces();
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name] || []) {
+        if (net.family === "IPv4" && !net.internal && net.address.startsWith("192.168.")) {
+          return net.address;
+        }
+      }
+    }
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name] || []) {
+        if (net.family === "IPv4" && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+  } catch {}
+  return "127.0.0.1";
+}
+
+const OFFICE_IP = getLocalIp();
+const OFFICE_PORT = process.env.OFFICE_PORT || process.env.XRAY_LISTEN_PORT || "8443";
+const OFFICE_SNI = process.env.OFFICE_SNI || process.env.REALITY_SERVER_NAMES?.split(",")[0]?.trim() || "www.microsoft.com";
 
 router.get("/server/client-ip", async (req, res): Promise<void> => {
-  const ip = req.ip || 'unknown';
+  let ip = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim()
+    || req.headers["x-real-ip"]?.toString()
+    || req.socket.remoteAddress
+    || req.ip
+    || "unknown";
+
+  if (ip === "::1" || ip === "::ffff:127.0.0.1" || ip === "127.0.0.1") {
+    ip = "localhost";
+  } else if (ip.startsWith("::ffff:")) {
+    ip = ip.slice(7);
+  }
+
   res.json({ ip });
 });
 
