@@ -106,9 +106,9 @@ export interface VpnProfile {
   /** @nullable */
   lastPing: number | null;
   /** @nullable */
-  lastDownloadSpeed?: number | null;
+  lastDownloadSpeed: number | null;
   /** @nullable */
-  lastCheckAt?: string | null;
+  lastCheckAt: string | null;
   isOnline: boolean;
   status: string;
   transportType: string;
@@ -279,40 +279,37 @@ export interface ClusterStats {
   totalBandwidth: number;
 }
 
-export interface MonitoringSettings {
+export interface MonitoringSettingsResponse {
+  id: number;
   enabled: boolean;
   intervalSeconds: number;
   pingThresholdMs: number;
-  autoSwitch: boolean;
-  /** @nullable */
-  lastCheckAt?: string | null;
-  isRunning: boolean;
+  autoSwitchEnabled: boolean;
 }
 
 export interface UpdateMonitoringSettingsRequest {
+  enabled?: boolean;
   intervalSeconds?: number;
   pingThresholdMs?: number;
-  autoSwitch?: boolean;
+  autoSwitchEnabled?: boolean;
 }
 
-export interface MonitoringActionResponse {
-  message: string;
+export interface MonitoringStatusResponse {
   isRunning: boolean;
+  /** @nullable */
+  lastCheckAt: string | null;
+  settings: MonitoringSettingsResponse;
 }
 
 export interface SwitchEvent {
   id: number;
   /** @nullable */
-  fromProfileId?: number | null;
+  fromProfileId: number | null;
   /** @nullable */
-  fromProfileName?: string | null;
+  fromProfileName: string | null;
   toProfileId: number;
   toProfileName: string;
   reason: string;
-  /** @nullable */
-  pingBefore?: number | null;
-  /** @nullable */
-  pingAfter?: number | null;
   createdAt: string;
 }
 

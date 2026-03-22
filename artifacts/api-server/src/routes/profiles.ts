@@ -17,6 +17,7 @@ import {
   PingProfileParams,
   PingProfileResponse,
 } from "@workspace/api-zod";
+import { measureNode } from "../services/tcp-ping";
 
 const router: IRouter = Router();
 
@@ -38,8 +39,8 @@ function formatProfile(profile: VpnProfile) {
     countryFlag: profile.countryFlag || "🌐",
     isActive: profile.isActive,
     lastPing: profile.lastPing,
-    lastDownloadSpeed: profile.lastDownloadSpeed,
-    lastCheckAt: profile.lastCheckAt?.toISOString() ?? null,
+    lastDownloadSpeed: profile.lastDownloadSpeed ?? null,
+    lastCheckAt: profile.lastCheckAt ? profile.lastCheckAt.toISOString() : null,
     isOnline: profile.isOnline,
     status: profile.status,
     transportType: profile.transportType || "tcp",
@@ -313,21 +314,24 @@ router.get("/profiles/:id/ping", async (req, res): Promise<void> => {
     return;
   }
 
-  const { tcpPing } = await import("../services/tcp-ping");
-  const result = await tcpPing(profile.address, profile.port);
+  const measurement = await measureNode(
+    profile.address,
+    profile.port,
+    profile.security || undefined,
+    profile.sni || undefined
+  );
 
   await db.update(vpnProfilesTable).set({
-    lastPing: result.latencyMs,
-    lastDownloadSpeed: result.tlsEstimateMs ? Math.round((1000 / result.tlsEstimateMs) * 100) / 100 : null,
+    lastPing: measurement.ping,
+    lastDownloadSpeed: measurement.downloadSpeed,
     lastCheckAt: new Date(),
-    isOnline: result.reachable,
-    status: result.reachable ? (profile.isActive ? "active" : "inactive") : "offline",
+    isOnline: measurement.isOnline,
   }).where(eq(vpnProfilesTable.id, params.data.id));
 
   res.json(PingProfileResponse.parse({
     profileId: profile.id,
-    ping: result.latencyMs,
-    status: result.reachable ? "ok" : "fail",
+    ping: measurement.ping,
+    status: measurement.isOnline ? "ok" : "timeout",
   }));
 });
 

@@ -8,12 +8,12 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { CyberCard, CyberButton, CyberBadge, Modal, CyberInput } from '@/components/ui/cyber';
 import { CyberTooltip } from '@/components/ui/tooltip';
-import { Plus, Trash2, Power, Activity, QrCode, Link as LinkIcon, Rss, Keyboard } from 'lucide-react';
+import { Plus, Trash2, Power, Activity, QrCode, Link as LinkIcon, Rss, Keyboard, Wifi, WifiOff } from 'lucide-react';
 import { QrScanner } from '@/components/qr-scanner';
 
 export default function ProfilesPage() {
   const queryClient = useQueryClient();
-  const { data: profiles, isLoading } = useListProfiles();
+  const { data: profiles, isLoading } = useListProfiles({ query: { refetchInterval: 10000 } as never });
   
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [importTab, setImportTab] = useState<'url' | 'sub' | 'qr' | 'manual'>('url');
@@ -72,6 +72,21 @@ export default function ProfilesPage() {
     } catch {}
   };
 
+  function getPingColor(ping: number | null | undefined, isOnline?: boolean) {
+    if (!isOnline) return 'text-red-500';
+    if (ping === null || ping === undefined) return 'text-muted-foreground';
+    if (ping < 100) return 'text-primary';
+    if (ping < 300) return 'text-yellow-500';
+    return 'text-red-400';
+  }
+
+  function getStatusBadge(profile: { isActive: boolean; isOnline: boolean; status: string }) {
+    if (profile.isActive && profile.isOnline) return { variant: 'default' as const, label: 'АКТИВЕН' };
+    if (profile.isActive && !profile.isOnline) return { variant: 'destructive' as const, label: 'ДЕГРАДАЦИЯ' };
+    if (!profile.isOnline) return { variant: 'destructive' as const, label: 'ОФЛАЙН' };
+    return { variant: 'muted' as const, label: 'ОЖИДАНИЕ' };
+  }
+
   return (
     <Layout>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
@@ -91,79 +106,78 @@ export default function ProfilesPage() {
         <div className="text-primary font-mono animate-pulse">Сканирование топологии...</div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {profiles?.map((profile) => (
-            <CyberCard key={profile.id} className={`p-5 flex flex-col justify-between ${profile.isActive ? 'border-primary shadow-[0_0_20px_rgba(0,212,170,0.2)]' : 'border-primary/20'}`}>
-              <div>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{profile.countryFlag}</span>
-                    <h3 className="font-display font-bold text-lg text-foreground tracking-wider uppercase truncate max-w-[150px]">{profile.name}</h3>
-                  </div>
-                  <div className="flex gap-2">
-                    <CyberBadge variant={profile.isOnline ? 'green' : 'red'}>
-                      {profile.isOnline ? 'ОНЛАЙН' : 'ОФЛАЙН'}
-                    </CyberBadge>
-                    <CyberTooltip text={profile.isActive ? 'Этот узел сейчас используется' : 'Узел в режиме ожидания'}>
-                      <CyberBadge variant={profile.isActive ? 'default' : 'muted'}>
-                        {profile.isActive ? 'АКТИВЕН' : 'ОЖИДАНИЕ'}
-                      </CyberBadge>
-                    </CyberTooltip>
-                  </div>
-                </div>
-                
-                <div className="space-y-2 mb-6 font-mono text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Протокол:</span>
-                    <span className="text-primary">{profile.protocol.toUpperCase()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Адрес:</span>
-                    <span className="text-foreground truncate ml-4">{profile.address}:{profile.port}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Задержка:</span>
+          {profiles?.map((profile) => {
+            const badge = getStatusBadge(profile);
+            return (
+              <CyberCard key={profile.id} className={`p-5 flex flex-col justify-between ${profile.isActive ? 'border-primary shadow-[0_0_20px_rgba(0,212,170,0.2)]' : !profile.isOnline ? 'border-red-500/30 opacity-75' : 'border-primary/20'}`}>
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{profile.countryFlag}</span>
+                      <h3 className="font-display font-bold text-lg text-foreground tracking-wider uppercase truncate max-w-[150px]">{profile.name}</h3>
+                    </div>
                     <div className="flex items-center gap-2">
-                      <span className={profile.lastPing && profile.lastPing < 150 ? 'text-primary' : 'text-yellow-500'}>
-                        {profile.lastPing ? `${profile.lastPing}мс` : 'Неизвестно'}
-                      </span>
-                      <CyberTooltip text="Проверить задержку до узла">
-                        <button onClick={() => handlePing(profile.id)} className="text-muted-foreground hover:text-primary">
-                          <Activity className="w-4 h-4" />
-                        </button>
+                      <CyberTooltip text={profile.isOnline ? 'Узел доступен' : 'Узел недоступен'}>
+                        {profile.isOnline ? (
+                          <Wifi className="w-3.5 h-3.5 text-primary" />
+                        ) : (
+                          <WifiOff className="w-3.5 h-3.5 text-red-500" />
+                        )}
                       </CyberTooltip>
+                      <CyberBadge variant={badge.variant}>
+                        {badge.label}
+                      </CyberBadge>
                     </div>
                   </div>
-                  {profile.lastDownloadSpeed != null && (
+                  
+                  <div className="space-y-2 mb-6 font-mono text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Скорость:</span>
-                      <span className="text-cyan-400">{profile.lastDownloadSpeed.toFixed(1)} Мбит/с</span>
+                      <span className="text-muted-foreground">Протокол:</span>
+                      <span className="text-primary">{profile.protocol.toUpperCase()}</span>
                     </div>
-                  )}
-                  {profile.lastCheckAt && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Проверка:</span>
-                      <span className="text-muted-foreground/70">{new Date(profile.lastCheckAt).toLocaleTimeString('ru-RU')}</span>
+                      <span className="text-muted-foreground">Адрес:</span>
+                      <span className="text-foreground truncate ml-4">{profile.address}:{profile.port}</span>
                     </div>
-                  )}
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Задержка:</span>
+                      <div className="flex items-center gap-2">
+                        <span className={getPingColor(profile.lastPing, profile.isOnline)}>
+                          {!profile.isOnline ? 'ТАЙМАУТ' : profile.lastPing ? `${profile.lastPing}мс` : 'Неизвестно'}
+                        </span>
+                        <CyberTooltip text="Проверить задержку до узла">
+                          <button onClick={() => handlePing(profile.id)} className="text-muted-foreground hover:text-primary">
+                            <Activity className="w-4 h-4" />
+                          </button>
+                        </CyberTooltip>
+                      </div>
+                    </div>
+                    {profile.lastDownloadSpeed !== null && profile.lastDownloadSpeed !== undefined && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Скорость:</span>
+                        <span className="text-accent">{profile.lastDownloadSpeed} Кбит/с</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex gap-2 pt-4 border-t border-primary/20">
-                {!profile.isActive && (
-                  <CyberTooltip text="Активировать этот узел как основной маршрут">
-                    <CyberButton onClick={() => handleActivate(profile.id)} className="flex-1 text-xs px-2">
-                      <Power className="w-3 h-3" /> Подключить
+                <div className="flex gap-2 pt-4 border-t border-primary/20">
+                  {!profile.isActive && (
+                    <CyberTooltip text="Активировать этот узел как основной маршрут">
+                      <CyberButton onClick={() => handleActivate(profile.id)} className="flex-1 text-xs px-2">
+                        <Power className="w-3 h-3" /> Подключить
+                      </CyberButton>
+                    </CyberTooltip>
+                  )}
+                  <CyberTooltip text="Удалить узел из системы">
+                    <CyberButton onClick={() => handleDelete(profile.id)} variant="destructive" className={`${profile.isActive ? 'w-full' : 'w-auto px-3'}`}>
+                      <Trash2 className="w-4 h-4" />
                     </CyberButton>
                   </CyberTooltip>
-                )}
-                <CyberTooltip text="Удалить узел из системы">
-                  <CyberButton onClick={() => handleDelete(profile.id)} variant="destructive" className={`${profile.isActive ? 'w-full' : 'w-auto px-3'}`}>
-                    <Trash2 className="w-4 h-4" />
-                  </CyberButton>
-                </CyberTooltip>
-              </div>
-            </CyberCard>
-          ))}
+                </div>
+              </CyberCard>
+            );
+          })}
         </div>
       )}
 

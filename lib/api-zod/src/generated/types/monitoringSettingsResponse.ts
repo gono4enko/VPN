@@ -6,12 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface MonitoringSettings {
+export interface MonitoringSettingsResponse {
+  id: number;
   enabled: boolean;
   intervalSeconds: number;
   pingThresholdMs: number;
-  autoSwitch: boolean;
-  /** @nullable */
-  lastCheckAt?: string | null;
-  isRunning: boolean;
+  autoSwitchEnabled: boolean;
 }

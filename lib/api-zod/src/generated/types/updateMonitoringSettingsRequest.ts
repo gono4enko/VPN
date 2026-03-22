@@ -7,7 +7,8 @@
  */
 
 export interface UpdateMonitoringSettingsRequest {
+  enabled?: boolean;
   intervalSeconds?: number;
   pingThresholdMs?: number;
-  autoSwitch?: boolean;
+  autoSwitchEnabled?: boolean;
 }

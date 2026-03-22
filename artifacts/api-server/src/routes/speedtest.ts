@@ -5,31 +5,33 @@ import {
   RunSpeedtestResponse,
   AutoSelectProfileResponse,
 } from "@workspace/api-zod";
-import { tcpPing } from "../services/tcp-ping";
+import { measureNode } from "../services/tcp-ping";
 
 const router: IRouter = Router();
 
 router.post("/speedtest/run", async (_req, res): Promise<void> => {
   const profiles = await db.select().from(vpnProfilesTable);
 
-  const results: { profileId: number; profileName: string; ping: number; status: "ok" | "fail" }[] = [];
+  const results = [];
+  for (const p of profiles) {
+    const measurement = await measureNode(p.address, p.port, p.security || undefined, p.sni || undefined);
+    const ping = measurement.ping;
+    const status = measurement.isOnline ? "ok" : "timeout";
 
-  await Promise.all(profiles.map(async (p) => {
-    const result = await tcpPing(p.address, p.port);
     await db.update(vpnProfilesTable).set({
-      lastPing: result.latencyMs,
-      lastDownloadSpeed: result.tlsEstimateMs ? Math.round((1000 / result.tlsEstimateMs) * 100) / 100 : null,
+      lastPing: ping,
+      lastDownloadSpeed: measurement.downloadSpeed,
       lastCheckAt: new Date(),
-      isOnline: result.reachable,
+      isOnline: measurement.isOnline,
     }).where(eq(vpnProfilesTable.id, p.id));
 
     results.push({
       profileId: p.id,
       profileName: `${p.countryFlag} ${p.name}`,
-      ping: result.latencyMs,
-      status: result.reachable ? "ok" : "fail",
+      ping,
+      status,
     });
-  }));
+  }
 
   res.json(RunSpeedtestResponse.parse(results));
 });
@@ -42,34 +44,41 @@ router.post("/speedtest/auto-select", async (_req, res): Promise<void> => {
     return;
   }
 
-  const pingResults: { profile: typeof profiles[0]; latency: number; reachable: boolean }[] = [];
+  const results = [];
+  for (const p of profiles) {
+    const measurement = await measureNode(p.address, p.port, p.security || undefined, p.sni || undefined);
 
-  await Promise.all(profiles.map(async (p) => {
-    const result = await tcpPing(p.address, p.port);
     await db.update(vpnProfilesTable).set({
-      lastPing: result.latencyMs,
-      lastDownloadSpeed: result.tlsEstimateMs ? Math.round((1000 / result.tlsEstimateMs) * 100) / 100 : null,
+      lastPing: measurement.ping,
+      lastDownloadSpeed: measurement.downloadSpeed,
       lastCheckAt: new Date(),
-      isOnline: result.reachable,
+      isOnline: measurement.isOnline,
     }).where(eq(vpnProfilesTable.id, p.id));
-    pingResults.push({ profile: p, latency: result.latencyMs, reachable: result.reachable });
-  }));
 
-  const reachable = pingResults.filter(r => r.reachable).sort((a, b) => a.latency - b.latency);
-  if (reachable.length === 0) {
-    res.status(400).json({ error: "Все узлы недоступны" });
+    results.push({
+      ...p,
+      testPing: measurement.ping,
+      isOnline: measurement.isOnline,
+    });
+  }
+
+  const onlineResults = results.filter(r => r.isOnline && r.testPing !== null);
+  if (onlineResults.length === 0) {
+    res.status(400).json({ error: "No reachable profiles found" });
     return;
   }
 
-  const best = reachable[0];
+  onlineResults.sort((a, b) => (a.testPing || 9999) - (b.testPing || 9999));
+  const best = onlineResults[0];
+
   await db.update(vpnProfilesTable).set({ isActive: false }).where(eq(vpnProfilesTable.isActive, true));
-  await db.update(vpnProfilesTable).set({ isActive: true, status: "active" }).where(eq(vpnProfilesTable.id, best.profile.id));
+  await db.update(vpnProfilesTable).set({ isActive: true, status: "active" }).where(eq(vpnProfilesTable.id, best.id));
 
   res.json(AutoSelectProfileResponse.parse({
-    selectedProfileId: best.profile.id,
-    selectedProfileName: `${best.profile.countryFlag} ${best.profile.name}`,
-    ping: best.latency,
-    message: `Переключено на ${best.profile.countryFlag} ${best.profile.name} (${best.latency}мс)`,
+    selectedProfileId: best.id,
+    selectedProfileName: `${best.countryFlag} ${best.name}`,
+    ping: best.testPing!,
+    message: `Switched to ${best.countryFlag} ${best.name} (${best.testPing}ms)`,
   }));
 });
 

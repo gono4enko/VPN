@@ -25,9 +25,9 @@ export interface VpnProfile {
   /** @nullable */
   lastPing: number | null;
   /** @nullable */
-  lastDownloadSpeed?: number | null;
+  lastDownloadSpeed: number | null;
   /** @nullable */
-  lastCheckAt?: string | null;
+  lastCheckAt: string | null;
   isOnline: boolean;
   status: string;
   transportType: string;

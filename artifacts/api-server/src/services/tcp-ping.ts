@@ -1,12 +1,13 @@
 import net from "node:net";
+import tls from "node:tls";
 
 export interface PingResult {
-  reachable: boolean;
-  latencyMs: number;
-  tlsEstimateMs: number | null;
+  ping: number | null;
+  downloadSpeed: number | null;
+  isOnline: boolean;
 }
 
-export function tcpPing(host: string, port: number, timeoutMs = 5000): Promise<PingResult> {
+export async function tcpPing(host: string, port: number, timeoutMs = 5000): Promise<PingResult> {
   return new Promise((resolve) => {
     const start = performance.now();
     const socket = new net.Socket();
@@ -14,32 +15,71 @@ export function tcpPing(host: string, port: number, timeoutMs = 5000): Promise<P
     socket.setTimeout(timeoutMs);
 
     socket.on("connect", () => {
-      const latencyMs = Math.round(performance.now() - start);
-      const tlsEstimateMs = Math.round(latencyMs * 1.8);
+      const connectTime = Math.round(performance.now() - start);
       socket.destroy();
-      resolve({ reachable: true, latencyMs, tlsEstimateMs });
+      resolve({ ping: connectTime, downloadSpeed: null, isOnline: true });
     });
 
     socket.on("timeout", () => {
       socket.destroy();
-      resolve({ reachable: false, latencyMs: timeoutMs, tlsEstimateMs: null });
+      resolve({ ping: null, downloadSpeed: null, isOnline: false });
     });
 
     socket.on("error", () => {
       socket.destroy();
-      resolve({ reachable: false, latencyMs: Math.round(performance.now() - start), tlsEstimateMs: null });
+      resolve({ ping: null, downloadSpeed: null, isOnline: false });
     });
 
     socket.connect(port, host);
   });
 }
 
-export async function pingAllProfiles(profiles: { id: number; address: string; port: number }[]): Promise<Map<number, PingResult>> {
-  const results = new Map<number, PingResult>();
-  const promises = profiles.map(async (p) => {
-    const result = await tcpPing(p.address, p.port);
-    results.set(p.id, result);
+export async function tlsProbe(host: string, port: number, sni?: string, timeoutMs = 5000): Promise<PingResult> {
+  return new Promise((resolve) => {
+    const start = performance.now();
+
+    const socket = tls.connect(
+      {
+        host,
+        port,
+        servername: sni || host,
+        rejectUnauthorized: false,
+        timeout: timeoutMs,
+      },
+      () => {
+        const handshakeTime = Math.round(performance.now() - start);
+        const estimatedSpeed = handshakeTime > 0 ? Math.round((1500 * 8 * 1000) / handshakeTime / 1024) : null;
+        socket.destroy();
+        resolve({
+          ping: handshakeTime,
+          downloadSpeed: estimatedSpeed,
+          isOnline: true,
+        });
+      }
+    );
+
+    socket.setTimeout(timeoutMs);
+
+    socket.on("timeout", () => {
+      socket.destroy();
+      resolve({ ping: null, downloadSpeed: null, isOnline: false });
+    });
+
+    socket.on("error", () => {
+      socket.destroy();
+      resolve({ ping: null, downloadSpeed: null, isOnline: false });
+    });
   });
-  await Promise.all(promises);
-  return results;
+}
+
+export async function measureNode(
+  address: string,
+  port: number,
+  security?: string,
+  sni?: string
+): Promise<PingResult> {
+  if (security === "reality" || security === "tls" || port === 443) {
+    return tlsProbe(address, port, sni);
+  }
+  return tcpPing(address, port);
 }

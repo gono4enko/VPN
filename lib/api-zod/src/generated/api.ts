@@ -211,8 +211,8 @@ export const ListProfilesResponseItem = zod.object({
   countryFlag: zod.string(),
   isActive: zod.boolean(),
   lastPing: zod.number().nullable(),
-  lastDownloadSpeed: zod.number().nullish(),
-  lastCheckAt: zod.string().nullish(),
+  lastDownloadSpeed: zod.number().nullable(),
+  lastCheckAt: zod.string().nullable(),
   isOnline: zod.boolean(),
   status: zod.string(),
   transportType: zod.string(),
@@ -290,8 +290,8 @@ export const ImportProfileSubResponseItem = zod.object({
   countryFlag: zod.string(),
   isActive: zod.boolean(),
   lastPing: zod.number().nullable(),
-  lastDownloadSpeed: zod.number().nullish(),
-  lastCheckAt: zod.string().nullish(),
+  lastDownloadSpeed: zod.number().nullable(),
+  lastCheckAt: zod.string().nullable(),
   isOnline: zod.boolean(),
   status: zod.string(),
   transportType: zod.string(),
@@ -359,8 +359,8 @@ export const UpdateProfileResponse = zod.object({
   countryFlag: zod.string(),
   isActive: zod.boolean(),
   lastPing: zod.number().nullable(),
-  lastDownloadSpeed: zod.number().nullish(),
-  lastCheckAt: zod.string().nullish(),
+  lastDownloadSpeed: zod.number().nullable(),
+  lastCheckAt: zod.string().nullable(),
   isOnline: zod.boolean(),
   status: zod.string(),
   transportType: zod.string(),
@@ -408,8 +408,8 @@ export const ActivateProfileResponse = zod.object({
   countryFlag: zod.string(),
   isActive: zod.boolean(),
   lastPing: zod.number().nullable(),
-  lastDownloadSpeed: zod.number().nullish(),
-  lastCheckAt: zod.string().nullish(),
+  lastDownloadSpeed: zod.number().nullable(),
+  lastCheckAt: zod.string().nullable(),
   isOnline: zod.boolean(),
   status: zod.string(),
   transportType: zod.string(),
@@ -540,70 +540,60 @@ export const AutoSelectProfileResponse = zod.object({
 });
 
 /**
- * @summary Get traffic statistics for last 24 hours
- */
-export const GetTrafficStatsResponse = zod.object({
-  points: zod.array(
-    zod.object({
-      time: zod.string(),
-      inbound: zod.number(),
-      outbound: zod.number(),
-    }),
-  ),
-  totalIn: zod.number(),
-  totalOut: zod.number(),
-});
-
-/**
  * @summary Get monitoring settings
  */
 export const GetMonitoringSettingsResponse = zod.object({
+  id: zod.number(),
   enabled: zod.boolean(),
   intervalSeconds: zod.number(),
   pingThresholdMs: zod.number(),
-  autoSwitch: zod.boolean(),
-  lastCheckAt: zod.string().nullish(),
-  isRunning: zod.boolean(),
+  autoSwitchEnabled: zod.boolean(),
 });
 
 /**
  * @summary Update monitoring settings
  */
 export const UpdateMonitoringSettingsBody = zod.object({
+  enabled: zod.boolean().optional(),
   intervalSeconds: zod.number().optional(),
   pingThresholdMs: zod.number().optional(),
-  autoSwitch: zod.boolean().optional(),
+  autoSwitchEnabled: zod.boolean().optional(),
 });
 
 export const UpdateMonitoringSettingsResponse = zod.object({
+  id: zod.number(),
   enabled: zod.boolean(),
   intervalSeconds: zod.number(),
   pingThresholdMs: zod.number(),
-  autoSwitch: zod.boolean(),
-  lastCheckAt: zod.string().nullish(),
-  isRunning: zod.boolean(),
+  autoSwitchEnabled: zod.boolean(),
 });
 
 /**
- * @summary Start background monitoring
+ * @summary Get monitoring loop status
+ */
+export const GetMonitoringStatusResponse = zod.object({
+  isRunning: zod.boolean(),
+  lastCheckAt: zod.string().nullable(),
+  settings: zod.object({
+    id: zod.number(),
+    enabled: zod.boolean(),
+    intervalSeconds: zod.number(),
+    pingThresholdMs: zod.number(),
+    autoSwitchEnabled: zod.boolean(),
+  }),
+});
+
+/**
+ * @summary Start the monitoring loop
  */
 export const StartMonitoringResponse = zod.object({
   message: zod.string(),
-  isRunning: zod.boolean(),
 });
 
 /**
- * @summary Stop background monitoring
+ * @summary Stop the monitoring loop
  */
 export const StopMonitoringResponse = zod.object({
-  message: zod.string(),
-  isRunning: zod.boolean(),
-});
-
-/**
- * @summary Run a monitoring check immediately
- */
-export const CheckNowResponse = zod.object({
   message: zod.string(),
 });
 
@@ -612,13 +602,11 @@ export const CheckNowResponse = zod.object({
  */
 export const GetMonitoringEventsResponseItem = zod.object({
   id: zod.number(),
-  fromProfileId: zod.number().nullish(),
-  fromProfileName: zod.string().nullish(),
+  fromProfileId: zod.number().nullable(),
+  fromProfileName: zod.string().nullable(),
   toProfileId: zod.number(),
   toProfileName: zod.string(),
   reason: zod.string(),
-  pingBefore: zod.number().nullish(),
-  pingAfter: zod.number().nullish(),
   createdAt: zod.string(),
 });
 export const GetMonitoringEventsResponse = zod.array(
@@ -802,6 +790,21 @@ export const GetRoutingStatsResponse = zod.object({
       regexp: zod.number().optional(),
     })
     .optional(),
+});
+
+/**
+ * @summary Get traffic statistics for last 24 hours
+ */
+export const GetTrafficStatsResponse = zod.object({
+  points: zod.array(
+    zod.object({
+      time: zod.string(),
+      inbound: zod.number(),
+      outbound: zod.number(),
+    }),
+  ),
+  totalIn: zod.number(),
+  totalOut: zod.number(),
 });
 
 /**

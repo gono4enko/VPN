@@ -610,18 +610,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AutoSelectResult"
-  /traffic/stats:
-    get:
-      operationId: getTrafficStats
-      tags: [server]
-      summary: Get traffic statistics for last 24 hours
-      responses:
-        "200":
-          description: Traffic data
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TrafficStats"
   /monitoring/settings:
     get:
       operationId: getMonitoringSettings
@@ -629,11 +617,11 @@ paths:
       summary: Get monitoring settings
       responses:
         "200":
-          description: Monitoring settings
+          description: Current monitoring settings
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitoringSettings"
+                $ref: "#/components/schemas/MonitoringSettingsResponse"
     put:
       operationId: updateMonitoringSettings
       tags: [monitoring]
@@ -650,39 +638,39 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitoringSettings"
+                $ref: "#/components/schemas/MonitoringSettingsResponse"
+  /monitoring/status:
+    get:
+      operationId: getMonitoringStatus
+      tags: [monitoring]
+      summary: Get monitoring loop status
+      responses:
+        "200":
+          description: Monitoring status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonitoringStatusResponse"
   /monitoring/start:
     post:
       operationId: startMonitoring
       tags: [monitoring]
-      summary: Start background monitoring
+      summary: Start the monitoring loop
       responses:
         "200":
           description: Monitoring started
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MonitoringActionResponse"
+                $ref: "#/components/schemas/MessageResponse"
   /monitoring/stop:
     post:
       operationId: stopMonitoring
       tags: [monitoring]
-      summary: Stop background monitoring
+      summary: Stop the monitoring loop
       responses:
         "200":
           description: Monitoring stopped
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MonitoringActionResponse"
-  /monitoring/check-now:
-    post:
-      operationId: checkNow
-      tags: [monitoring]
-      summary: Run a monitoring check immediately
-      responses:
-        "200":
-          description: Check completed
           content:
             application/json:
               schema:
@@ -883,6 +871,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RoutingStats"
+  /traffic/stats:
+    get:
+      operationId: getTrafficStats
+      tags: [server]
+      summary: Get traffic statistics for last 24 hours
+      responses:
+        "200":
+          description: Traffic data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrafficStats"
   /cluster/servers:
     get:
       operationId: listServers
@@ -1198,7 +1198,7 @@ components:
         lastPing:
           type: ["integer", "null"]
         lastDownloadSpeed:
-          type: ["number", "null"]
+          type: ["integer", "null"]
         lastCheckAt:
           type: ["string", "null"]
         isOnline:
@@ -1250,6 +1250,8 @@ components:
         - countryFlag
         - isActive
         - lastPing
+        - lastDownloadSpeed
+        - lastCheckAt
         - isOnline
         - status
         - transportType
@@ -1581,7 +1583,26 @@ components:
         - onlineServers
         - totalClients
         - totalBandwidth
-    MonitoringSettings:
+    MonitoringSettingsResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        enabled:
+          type: boolean
+        intervalSeconds:
+          type: integer
+        pingThresholdMs:
+          type: integer
+        autoSwitchEnabled:
+          type: boolean
+      required:
+        - id
+        - enabled
+        - intervalSeconds
+        - pingThresholdMs
+        - autoSwitchEnabled
+    UpdateMonitoringSettingsRequest:
       type: object
       properties:
         enabled:
@@ -1590,37 +1611,21 @@ components:
           type: integer
         pingThresholdMs:
           type: integer
-        autoSwitch:
+        autoSwitchEnabled:
+          type: boolean
+    MonitoringStatusResponse:
+      type: object
+      properties:
+        isRunning:
           type: boolean
         lastCheckAt:
           type: ["string", "null"]
-        isRunning:
-          type: boolean
+        settings:
+          $ref: "#/components/schemas/MonitoringSettingsResponse"
       required:
-        - enabled
-        - intervalSeconds
-        - pingThresholdMs
-        - autoSwitch
         - isRunning
-    UpdateMonitoringSettingsRequest:
-      type: object
-      properties:
-        intervalSeconds:
-          type: integer
-        pingThresholdMs:
-          type: integer
-        autoSwitch:
-          type: boolean
-    MonitoringActionResponse:
-      type: object
-      properties:
-        message:
-          type: string
-        isRunning:
-          type: boolean
-      required:
-        - message
-        - isRunning
+        - lastCheckAt
+        - settings
     SwitchEvent:
       type: object
       properties:
@@ -1636,14 +1641,12 @@ components:
           type: string
         reason:
           type: string
-        pingBefore:
-          type: ["integer", "null"]
-        pingAfter:
-          type: ["integer", "null"]
         createdAt:
           type: string
       required:
         - id
+        - fromProfileId
+        - fromProfileName
         - toProfileId
         - toProfileName
         - reason

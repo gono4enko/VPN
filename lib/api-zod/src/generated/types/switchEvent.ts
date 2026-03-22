@@ -9,15 +9,11 @@
 export interface SwitchEvent {
   id: number;
   /** @nullable */
-  fromProfileId?: number | null;
+  fromProfileId: number | null;
   /** @nullable */
-  fromProfileName?: string | null;
+  fromProfileName: string | null;
   toProfileId: number;
   toProfileName: string;
   reason: string;
-  /** @nullable */
-  pingBefore?: number | null;
-  /** @nullable */
-  pingAfter?: number | null;
   createdAt: string;
 }

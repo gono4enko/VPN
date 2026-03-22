@@ -1,107 +1,138 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db, vpnProfilesTable, monitoringSettingsTable, switchEventLogTable } from "@workspace/db";
-import { tcpPing } from "./tcp-ping";
+import { measureNode } from "./tcp-ping";
 
-let monitorInterval: ReturnType<typeof setInterval> | null = null;
+let monitoringTimer: ReturnType<typeof setInterval> | null = null;
+let lastCheckAt: string | null = null;
 let isRunning = false;
-let isCheckInProgress = false;
+let isChecking = false;
 
-export function isMonitoringRunning() {
-  return isRunning;
+export function getMonitoringStatus() {
+  return {
+    isRunning,
+    lastCheckAt,
+  };
 }
 
 export async function getOrCreateSettings() {
   const rows = await db.select().from(monitoringSettingsTable);
   if (rows.length > 0) return rows[0];
 
-  const [settings] = await db.insert(monitoringSettingsTable).values({
-    enabled: false,
-    intervalSeconds: 60,
-    pingThresholdMs: 500,
-    autoSwitch: true,
-  }).returning();
+  const [settings] = await db.insert(monitoringSettingsTable).values({}).returning();
   return settings;
 }
 
-export async function runMonitoringCheck() {
-  if (isCheckInProgress) return;
-  isCheckInProgress = true;
+export async function updateSettings(data: {
+  enabled?: boolean;
+  intervalSeconds?: number;
+  pingThresholdMs?: number;
+  autoSwitchEnabled?: boolean;
+}) {
+  if (data.intervalSeconds !== undefined && data.intervalSeconds < 10) {
+    data.intervalSeconds = 10;
+  }
+  if (data.pingThresholdMs !== undefined && data.pingThresholdMs < 50) {
+    data.pingThresholdMs = 50;
+  }
+
+  const settings = await getOrCreateSettings();
+  const [updated] = await db
+    .update(monitoringSettingsTable)
+    .set(data)
+    .where(eq(monitoringSettingsTable.id, settings.id))
+    .returning();
+
+  if (updated.enabled && !isRunning) {
+    await startMonitoring();
+  } else if (!updated.enabled && isRunning) {
+    stopMonitoring();
+  } else if (updated.enabled && isRunning) {
+    stopMonitoring();
+    await startMonitoring();
+  }
+
+  return updated;
+}
+
+async function runCheck() {
+  if (isChecking) return;
+  isChecking = true;
 
   try {
-    const settings = await getOrCreateSettings();
     const profiles = await db.select().from(vpnProfilesTable);
-
-    if (profiles.length === 0) return;
+    const settings = await getOrCreateSettings();
 
     for (const profile of profiles) {
-      try {
-        const result = await tcpPing(profile.address, profile.port);
+      const result = await measureNode(
+        profile.address,
+        profile.port,
+        profile.security || undefined,
+        profile.sni || undefined
+      );
 
-        await db.update(vpnProfilesTable).set({
-          lastPing: result.latencyMs,
-          lastDownloadSpeed: result.tlsEstimateMs ? Math.round((1000 / result.tlsEstimateMs) * 100) / 100 : null,
+      await db
+        .update(vpnProfilesTable)
+        .set({
+          lastPing: result.ping,
+          lastDownloadSpeed: result.downloadSpeed,
           lastCheckAt: new Date(),
-          isOnline: result.reachable,
-          status: result.reachable
-            ? (profile.isActive ? "active" : "inactive")
-            : "offline",
-        }).where(eq(vpnProfilesTable.id, profile.id));
-      } catch (err) {
-        console.error(`TCP ping failed for profile ${profile.id}:`, err);
-        await db.update(vpnProfilesTable).set({
-          lastCheckAt: new Date(),
-          isOnline: false,
-          status: "offline",
-        }).where(eq(vpnProfilesTable.id, profile.id));
+          isOnline: result.isOnline,
+          status: profile.isActive ? (result.isOnline ? "active" : "degraded") : (result.isOnline ? "inactive" : "offline"),
+        })
+        .where(eq(vpnProfilesTable.id, profile.id));
+    }
+
+    lastCheckAt = new Date().toISOString();
+
+    if (settings.autoSwitchEnabled) {
+      const activeProfile = profiles.find((p) => p.isActive);
+      if (activeProfile) {
+        const updatedActive = await db
+          .select()
+          .from(vpnProfilesTable)
+          .where(eq(vpnProfilesTable.id, activeProfile.id));
+
+        const current = updatedActive[0];
+        const needsSwitch =
+          current &&
+          (!current.isOnline ||
+            (current.lastPing !== null && current.lastPing > settings.pingThresholdMs));
+
+        if (needsSwitch) {
+          const allUpdated = await db.select().from(vpnProfilesTable);
+          const onlineProfiles = allUpdated
+            .filter((p) => p.isOnline && p.lastPing !== null && p.id !== current.id)
+            .sort((a, b) => (a.lastPing || 9999) - (b.lastPing || 9999));
+
+          if (onlineProfiles.length > 0) {
+            const best = onlineProfiles[0];
+
+            await db
+              .update(vpnProfilesTable)
+              .set({ isActive: false })
+              .where(eq(vpnProfilesTable.isActive, true));
+            await db
+              .update(vpnProfilesTable)
+              .set({ isActive: true, status: "active" })
+              .where(eq(vpnProfilesTable.id, best.id));
+
+            const reason = !current.isOnline
+              ? `Node ${current.name} went offline`
+              : `Node ${current.name} ping ${current.lastPing}ms exceeded threshold ${settings.pingThresholdMs}ms`;
+
+            await db.insert(switchEventLogTable).values({
+              fromProfileId: current.id,
+              fromProfileName: `${current.countryFlag} ${current.name}`,
+              toProfileId: best.id,
+              toProfileName: `${best.countryFlag} ${best.name}`,
+              reason,
+            });
+          }
+        }
       }
     }
-
-    await db.update(monitoringSettingsTable).set({ lastCheckAt: new Date() }).where(eq(monitoringSettingsTable.id, settings.id));
-
-    if (!settings.autoSwitch) return;
-
-    const updatedProfiles = await db.select().from(vpnProfilesTable);
-    const activeProfile = updatedProfiles.find(p => p.isActive);
-
-    const needSwitch =
-      !activeProfile ||
-      !activeProfile.isOnline ||
-      (activeProfile.lastPing !== null && activeProfile.lastPing > settings.pingThresholdMs);
-
-    if (!needSwitch) return;
-
-    const onlineProfiles = updatedProfiles
-      .filter(p => p.isOnline && p.lastPing !== null)
-      .sort((a, b) => (a.lastPing ?? 9999) - (b.lastPing ?? 9999));
-
-    if (onlineProfiles.length === 0) return;
-
-    const best = onlineProfiles[0];
-    if (activeProfile && best.id === activeProfile.id) return;
-
-    await db.update(vpnProfilesTable).set({ isActive: false }).where(eq(vpnProfilesTable.isActive, true));
-    await db.update(vpnProfilesTable).set({ isActive: true, status: "active" }).where(eq(vpnProfilesTable.id, best.id));
-
-    let reason = "";
-    if (!activeProfile) {
-      reason = "Нет активного профиля";
-    } else if (!activeProfile.isOnline) {
-      reason = "Активный узел недоступен";
-    } else {
-      reason = `Превышен порог задержки (${activeProfile.lastPing}мс > ${settings.pingThresholdMs}мс)`;
-    }
-
-    await db.insert(switchEventLogTable).values({
-      fromProfileId: activeProfile?.id ?? null,
-      fromProfileName: activeProfile ? `${activeProfile.countryFlag} ${activeProfile.name}` : null,
-      toProfileId: best.id,
-      toProfileName: `${best.countryFlag} ${best.name}`,
-      reason,
-      pingBefore: activeProfile?.lastPing ?? null,
-      pingAfter: best.lastPing,
-    });
   } finally {
-    isCheckInProgress = false;
+    isChecking = false;
   }
 }
 
@@ -109,38 +140,53 @@ export async function startMonitoring() {
   if (isRunning) return;
 
   const settings = await getOrCreateSettings();
-  await db.update(monitoringSettingsTable).set({ enabled: true }).where(eq(monitoringSettingsTable.id, settings.id));
+
+  await db
+    .update(monitoringSettingsTable)
+    .set({ enabled: true })
+    .where(eq(monitoringSettingsTable.id, settings.id));
 
   isRunning = true;
 
-  await runMonitoringCheck();
+  runCheck().catch(console.error);
 
-  monitorInterval = setInterval(async () => {
-    try {
-      const currentSettings = await getOrCreateSettings();
-      if (!currentSettings.enabled) {
-        await stopMonitoring();
-        return;
-      }
-      await runMonitoringCheck();
-    } catch (err) {
-      console.error("Monitoring check error:", err);
-    }
+  monitoringTimer = setInterval(() => {
+    runCheck().catch(console.error);
   }, settings.intervalSeconds * 1000);
 }
 
 export async function stopMonitoring() {
-  if (monitorInterval) {
-    clearInterval(monitorInterval);
-    monitorInterval = null;
+  if (monitoringTimer) {
+    clearInterval(monitoringTimer);
+    monitoringTimer = null;
   }
   isRunning = false;
 
-  await db.update(monitoringSettingsTable).set({ enabled: false }).where(sql`true`);
+  const settings = await getOrCreateSettings();
+  await db
+    .update(monitoringSettingsTable)
+    .set({ enabled: false })
+    .where(eq(monitoringSettingsTable.id, settings.id));
 }
 
-export async function restartMonitoringWithNewInterval() {
-  if (!isRunning) return;
-  await stopMonitoring();
-  await startMonitoring();
+export async function initMonitoringOnBoot() {
+  try {
+    const settings = await getOrCreateSettings();
+    if (settings.enabled) {
+      console.log("Auto-starting monitoring from persisted settings");
+      await startMonitoring();
+    }
+  } catch (err) {
+    console.error("Failed to init monitoring on boot:", err);
+  }
+}
+
+export async function getSwitchEvents(limit = 50) {
+  const events = await db
+    .select()
+    .from(switchEventLogTable)
+    .orderBy(switchEventLogTable.createdAt)
+    .limit(limit);
+
+  return events.reverse();
 }

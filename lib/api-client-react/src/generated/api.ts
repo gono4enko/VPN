@@ -34,8 +34,8 @@ import type {
   LoginResponse,
   MeResponse,
   MessageResponse,
-  MonitoringActionResponse,
-  MonitoringSettings,
+  MonitoringSettingsResponse,
+  MonitoringStatusResponse,
   PingResult,
   PresetImportResult,
   QrResponse,
@@ -2530,81 +2530,6 @@ export const useAutoSelectProfile = <
 };
 
 /**
- * @summary Get traffic statistics for last 24 hours
- */
-export const getGetTrafficStatsUrl = () => {
-  return `/api/traffic/stats`;
-};
-
-export const getTrafficStats = async (
-  options?: RequestInit,
-): Promise<TrafficStats> => {
-  return customFetch<TrafficStats>(getGetTrafficStatsUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetTrafficStatsQueryKey = () => {
-  return [`/api/traffic/stats`] as const;
-};
-
-export const getGetTrafficStatsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getTrafficStats>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getTrafficStats>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetTrafficStatsQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrafficStats>>> = ({
-    signal,
-  }) => getTrafficStats({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getTrafficStats>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type GetTrafficStatsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getTrafficStats>>
->;
-export type GetTrafficStatsQueryError = ErrorType<unknown>;
-
-/**
- * @summary Get traffic statistics for last 24 hours
- */
-
-export function useGetTrafficStats<
-  TData = Awaited<ReturnType<typeof getTrafficStats>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getTrafficStats>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetTrafficStatsQueryOptions(options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
  * @summary Get monitoring settings
  */
 export const getGetMonitoringSettingsUrl = () => {
@@ -2613,11 +2538,14 @@ export const getGetMonitoringSettingsUrl = () => {
 
 export const getMonitoringSettings = async (
   options?: RequestInit,
-): Promise<MonitoringSettings> => {
-  return customFetch<MonitoringSettings>(getGetMonitoringSettingsUrl(), {
-    ...options,
-    method: "GET",
-  });
+): Promise<MonitoringSettingsResponse> => {
+  return customFetch<MonitoringSettingsResponse>(
+    getGetMonitoringSettingsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
 };
 
 export const getGetMonitoringSettingsQueryKey = () => {
@@ -2689,13 +2617,16 @@ export const getUpdateMonitoringSettingsUrl = () => {
 export const updateMonitoringSettings = async (
   updateMonitoringSettingsRequest: UpdateMonitoringSettingsRequest,
   options?: RequestInit,
-): Promise<MonitoringSettings> => {
-  return customFetch<MonitoringSettings>(getUpdateMonitoringSettingsUrl(), {
-    ...options,
-    method: "PUT",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(updateMonitoringSettingsRequest),
-  });
+): Promise<MonitoringSettingsResponse> => {
+  return customFetch<MonitoringSettingsResponse>(
+    getUpdateMonitoringSettingsUrl(),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateMonitoringSettingsRequest),
+    },
+  );
 };
 
 export const getUpdateMonitoringSettingsMutationOptions = <
@@ -2767,7 +2698,82 @@ export const useUpdateMonitoringSettings = <
 };
 
 /**
- * @summary Start background monitoring
+ * @summary Get monitoring loop status
+ */
+export const getGetMonitoringStatusUrl = () => {
+  return `/api/monitoring/status`;
+};
+
+export const getMonitoringStatus = async (
+  options?: RequestInit,
+): Promise<MonitoringStatusResponse> => {
+  return customFetch<MonitoringStatusResponse>(getGetMonitoringStatusUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMonitoringStatusQueryKey = () => {
+  return [`/api/monitoring/status`] as const;
+};
+
+export const getGetMonitoringStatusQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMonitoringStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMonitoringStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMonitoringStatusQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMonitoringStatus>>
+  > = ({ signal }) => getMonitoringStatus({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMonitoringStatus>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMonitoringStatusQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMonitoringStatus>>
+>;
+export type GetMonitoringStatusQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get monitoring loop status
+ */
+
+export function useGetMonitoringStatus<
+  TData = Awaited<ReturnType<typeof getMonitoringStatus>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getMonitoringStatus>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMonitoringStatusQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Start the monitoring loop
  */
 export const getStartMonitoringUrl = () => {
   return `/api/monitoring/start`;
@@ -2775,8 +2781,8 @@ export const getStartMonitoringUrl = () => {
 
 export const startMonitoring = async (
   options?: RequestInit,
-): Promise<MonitoringActionResponse> => {
-  return customFetch<MonitoringActionResponse>(getStartMonitoringUrl(), {
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getStartMonitoringUrl(), {
     ...options,
     method: "POST",
   });
@@ -2825,7 +2831,7 @@ export type StartMonitoringMutationResult = NonNullable<
 export type StartMonitoringMutationError = ErrorType<unknown>;
 
 /**
- * @summary Start background monitoring
+ * @summary Start the monitoring loop
  */
 export const useStartMonitoring = <
   TError = ErrorType<unknown>,
@@ -2848,7 +2854,7 @@ export const useStartMonitoring = <
 };
 
 /**
- * @summary Stop background monitoring
+ * @summary Stop the monitoring loop
  */
 export const getStopMonitoringUrl = () => {
   return `/api/monitoring/stop`;
@@ -2856,8 +2862,8 @@ export const getStopMonitoringUrl = () => {
 
 export const stopMonitoring = async (
   options?: RequestInit,
-): Promise<MonitoringActionResponse> => {
-  return customFetch<MonitoringActionResponse>(getStopMonitoringUrl(), {
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getStopMonitoringUrl(), {
     ...options,
     method: "POST",
   });
@@ -2906,7 +2912,7 @@ export type StopMonitoringMutationResult = NonNullable<
 export type StopMonitoringMutationError = ErrorType<unknown>;
 
 /**
- * @summary Stop background monitoring
+ * @summary Stop the monitoring loop
  */
 export const useStopMonitoring = <
   TError = ErrorType<unknown>,
@@ -2926,87 +2932,6 @@ export const useStopMonitoring = <
   TContext
 > => {
   return useMutation(getStopMonitoringMutationOptions(options));
-};
-
-/**
- * @summary Run a monitoring check immediately
- */
-export const getCheckNowUrl = () => {
-  return `/api/monitoring/check-now`;
-};
-
-export const checkNow = async (
-  options?: RequestInit,
-): Promise<MessageResponse> => {
-  return customFetch<MessageResponse>(getCheckNowUrl(), {
-    ...options,
-    method: "POST",
-  });
-};
-
-export const getCheckNowMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof checkNow>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof checkNow>>,
-  TError,
-  void,
-  TContext
-> => {
-  const mutationKey = ["checkNow"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof checkNow>>,
-    void
-  > = () => {
-    return checkNow(requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type CheckNowMutationResult = NonNullable<
-  Awaited<ReturnType<typeof checkNow>>
->;
-
-export type CheckNowMutationError = ErrorType<unknown>;
-
-/**
- * @summary Run a monitoring check immediately
- */
-export const useCheckNow = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof checkNow>>,
-    TError,
-    void,
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof checkNow>>,
-  TError,
-  void,
-  TContext
-> => {
-  return useMutation(getCheckNowMutationOptions(options));
 };
 
 /**
@@ -3974,6 +3899,81 @@ export function useGetRoutingStats<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetRoutingStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get traffic statistics for last 24 hours
+ */
+export const getGetTrafficStatsUrl = () => {
+  return `/api/traffic/stats`;
+};
+
+export const getTrafficStats = async (
+  options?: RequestInit,
+): Promise<TrafficStats> => {
+  return customFetch<TrafficStats>(getGetTrafficStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetTrafficStatsQueryKey = () => {
+  return [`/api/traffic/stats`] as const;
+};
+
+export const getGetTrafficStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTrafficStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getTrafficStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetTrafficStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrafficStats>>> = ({
+    signal,
+  }) => getTrafficStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTrafficStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTrafficStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTrafficStats>>
+>;
+export type GetTrafficStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get traffic statistics for last 24 hours
+ */
+
+export function useGetTrafficStats<
+  TData = Awaited<ReturnType<typeof getTrafficStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getTrafficStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTrafficStatsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

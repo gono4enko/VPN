@@ -7,11 +7,19 @@ import {
   useGetAntiDpiSettings,
   useUpdateAntiDpiSettings,
   getGetAntiDpiSettingsQueryKey,
+  useGetMonitoringStatus,
+  useUpdateMonitoringSettings,
+  useStartMonitoring,
+  useStopMonitoring,
+  useGetMonitoringEvents,
+  getGetMonitoringStatusQueryKey,
+  getGetMonitoringEventsQueryKey,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { CyberCard, CyberButton, CyberInput } from '@/components/ui/cyber';
 import { CyberTooltip } from '@/components/ui/tooltip';
-import { Settings2, RefreshCw, Cpu, Network, Shield, Shuffle, Fingerprint, Layers } from 'lucide-react';
+import { Settings2, RefreshCw, Cpu, Network, Shield, Shuffle, Fingerprint, Layers, Play, Square, Clock, AlertTriangle } from 'lucide-react';
+import { format } from 'date-fns';
 
 const TRANSPORT_LABELS: Record<string, string> = {
   tcp: 'TCP',
@@ -61,6 +69,26 @@ export default function SettingsPage() {
     }
   }, [antiDpi]);
 
+  const { data: monitoringStatus, isLoading: monitoringLoading } = useGetMonitoringStatus({
+    query: { refetchInterval: 5000 } as never,
+  });
+  const { data: events } = useGetMonitoringEvents({
+    query: { refetchInterval: 10000 } as never,
+  });
+  const updateSettingsMutation = useUpdateMonitoringSettings();
+  const startMonitoringMutation = useStartMonitoring();
+  const stopMonitoringMutation = useStopMonitoring();
+
+  const [intervalInput, setIntervalInput] = useState('');
+  const [thresholdInput, setThresholdInput] = useState('');
+
+  useEffect(() => {
+    if (monitoringStatus?.settings) {
+      setIntervalInput(String(monitoringStatus.settings.intervalSeconds));
+      setThresholdInput(String(monitoringStatus.settings.pingThresholdMs));
+    }
+  }, [monitoringStatus?.settings?.intervalSeconds, monitoringStatus?.settings?.pingThresholdMs]);
+
   const handleRestart = async () => {
     if(confirm("Инициировать холодную перезагрузку ядра Xray? Соединения будут временно разорваны.")) {
       await restartMutation.mutateAsync();
@@ -101,6 +129,33 @@ export default function SettingsPage() {
     setTransportPriority(newPriority);
   };
 
+  const handleToggleMonitoring = async () => {
+    if (monitoringStatus?.isRunning) {
+      await stopMonitoringMutation.mutateAsync();
+    } else {
+      await startMonitoringMutation.mutateAsync();
+    }
+    queryClient.invalidateQueries({ queryKey: getGetMonitoringStatusQueryKey() });
+  };
+
+  const handleToggleAutoSwitch = async () => {
+    await updateSettingsMutation.mutateAsync({
+      data: { autoSwitchEnabled: !monitoringStatus?.settings?.autoSwitchEnabled },
+    });
+    queryClient.invalidateQueries({ queryKey: getGetMonitoringStatusQueryKey() });
+  };
+
+  const handleSaveSettings = async () => {
+    const interval = parseInt(intervalInput, 10);
+    const threshold = parseInt(thresholdInput, 10);
+    if (isNaN(interval) || isNaN(threshold) || interval < 10 || threshold < 50) return;
+
+    await updateSettingsMutation.mutateAsync({
+      data: { intervalSeconds: interval, pingThresholdMs: threshold },
+    });
+    queryClient.invalidateQueries({ queryKey: getGetMonitoringStatusQueryKey() });
+  };
+
   return (
     <Layout>
       <div className="mb-8">
@@ -115,7 +170,7 @@ export default function SettingsPage() {
           <h3 className="text-xl font-display uppercase font-bold text-primary mb-6 flex items-center gap-2 border-b border-primary/20 pb-4">
             <Network className="w-5 h-5" /> Входящая Матрица (Только чтение)
           </h3>
-          
+
           {isLoading ? (
             <div className="animate-pulse text-primary font-mono">Дешифровка конфигурации...</div>
           ) : (
@@ -145,36 +200,92 @@ export default function SettingsPage() {
         <div className="space-y-8">
           <CyberCard className="p-6">
             <h3 className="text-xl font-display uppercase font-bold text-accent mb-6 flex items-center gap-2 border-b border-accent/20 pb-4">
-              <Cpu className="w-5 h-5" /> Логика Автоматизации
+              <Cpu className="w-5 h-5" /> Движок Мониторинга
             </h3>
-            
-            {isLoading ? (
-              <div className="animate-pulse text-accent font-mono">Дешифровка конфигурации...</div>
+
+            {monitoringLoading ? (
+              <div className="animate-pulse text-accent font-mono">Загрузка статуса...</div>
             ) : (
               <div className="space-y-4 font-mono text-sm">
                 <div className="flex items-center justify-between p-3 bg-background/50 border border-primary/20">
-                  <CyberTooltip text="Автоматическое переключение на быстрейший профиль при превышении порога задержки">
+                  <CyberTooltip text="Фоновый цикл проверки состояния всех узлов">
+                    <span className="text-foreground">Цикл мониторинга</span>
+                  </CyberTooltip>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-1 text-xs border ${monitoringStatus?.isRunning ? 'text-primary border-primary bg-primary/10' : 'text-muted-foreground border-muted-foreground'}`}>
+                      {monitoringStatus?.isRunning ? 'РАБОТАЕТ' : 'ОСТАНОВЛЕН'}
+                    </span>
+                    <CyberButton
+                      onClick={handleToggleMonitoring}
+                      variant={monitoringStatus?.isRunning ? 'destructive' : 'default'}
+                      className="text-xs px-3 py-1"
+                      disabled={startMonitoringMutation.isPending || stopMonitoringMutation.isPending}
+                    >
+                      {monitoringStatus?.isRunning ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                      {monitoringStatus?.isRunning ? 'Стоп' : 'Старт'}
+                    </CyberButton>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-background/50 border border-primary/20">
+                  <CyberTooltip text="Автоматическое переключение на лучший узел при деградации активного">
                     <span className="text-foreground">Авто-переключение</span>
                   </CyberTooltip>
-                  <span className={`px-2 py-1 text-xs border ${config?.autoSwitch ? 'text-primary border-primary bg-primary/10' : 'text-muted-foreground border-muted-foreground'}`}>
-                    {config?.autoSwitch ? 'ВКЛЮЧЕНО' : 'ВЫКЛЮЧЕНО'}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-1 text-xs border ${monitoringStatus?.settings?.autoSwitchEnabled ? 'text-primary border-primary bg-primary/10' : 'text-muted-foreground border-muted-foreground'}`}>
+                      {monitoringStatus?.settings?.autoSwitchEnabled ? 'ВКЛЮЧЕНО' : 'ВЫКЛЮЧЕНО'}
+                    </span>
+                    <CyberButton
+                      onClick={handleToggleAutoSwitch}
+                      variant="outline"
+                      className="text-xs px-3 py-1"
+                      disabled={updateSettingsMutation.isPending}
+                    >
+                      Переключить
+                    </CyberButton>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center text-muted-foreground p-3 border-b border-primary/10">
-                  <CyberTooltip text="Интервал проверки задержки профилей в миллисекундах">
-                    <span>Интервал проверки</span>
-                  </CyberTooltip>
-                  <span className="text-foreground">{config?.autoSwitchInterval} мс</span>
+
+                {monitoringStatus?.lastCheckAt && (
+                  <div className="flex justify-between items-center text-muted-foreground p-3 border-b border-primary/10">
+                    <span className="flex items-center gap-2"><Clock className="w-3 h-3" /> Последняя проверка</span>
+                    <span className="text-foreground">
+                      {format(new Date(monitoringStatus.lastCheckAt), 'HH:mm:ss')}
+                    </span>
+                  </div>
+                )}
+
+                <div className="space-y-3 pt-2">
+                  <div className="space-y-1">
+                    <CyberTooltip text="Интервал между проверками узлов (минимум 10 секунд)">
+                      <label className="text-muted-foreground text-xs uppercase tracking-wider">Интервал проверки (секунды)</label>
+                    </CyberTooltip>
+                    <CyberInput
+                      type="number"
+                      min={10}
+                      value={intervalInput}
+                      onChange={e => setIntervalInput(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <CyberTooltip text="Порог задержки для автоматического переключения (минимум 50 мс)">
+                      <label className="text-muted-foreground text-xs uppercase tracking-wider">Порог задержки (мс)</label>
+                    </CyberTooltip>
+                    <CyberInput
+                      type="number"
+                      min={50}
+                      value={thresholdInput}
+                      onChange={e => setThresholdInput(e.target.value)}
+                    />
+                  </div>
+                  <CyberButton
+                    onClick={handleSaveSettings}
+                    className="w-full"
+                    disabled={updateSettingsMutation.isPending}
+                  >
+                    {updateSettingsMutation.isPending ? 'Сохранение...' : 'Сохранить параметры'}
+                  </CyberButton>
                 </div>
-                <div className="flex justify-between items-center text-muted-foreground p-3">
-                  <CyberTooltip text="Порог задержки для автоматического переключения в миллисекундах">
-                    <span>Порог задержки</span>
-                  </CyberTooltip>
-                  <span className="text-foreground">{config?.autoSwitchThreshold} мс</span>
-                </div>
-                <p className="text-xs text-muted-foreground/50 mt-4 italic">
-                  // Параметры заблокированы переменными окружения на хост-контейнере.
-                </p>
               </div>
             )}
           </CyberCard>
@@ -357,6 +468,31 @@ export default function SettingsPage() {
             </CyberButton>
           </div>
         </div>
+      )}
+
+      {events && events.length > 0 && (
+        <CyberCard className="p-6 mt-8">
+          <h3 className="text-xl font-display uppercase font-bold text-yellow-500 mb-6 flex items-center gap-2 border-b border-yellow-500/20 pb-4">
+            <AlertTriangle className="w-5 h-5" /> Журнал авто-переключений
+          </h3>
+          <div className="space-y-2 font-mono text-sm max-h-[300px] overflow-y-auto">
+            {events.map((event) => (
+              <div key={event.id} className="flex items-start gap-3 p-3 bg-background/50 border border-primary/10">
+                <span className="text-muted-foreground text-xs whitespace-nowrap mt-0.5">
+                  {format(new Date(event.createdAt), 'MMM dd HH:mm:ss')}
+                </span>
+                <div className="flex-1">
+                  <div className="text-foreground text-xs">
+                    <span className="text-red-400">{event.fromProfileName || 'Нет'}</span>
+                    <span className="text-muted-foreground mx-2">&rarr;</span>
+                    <span className="text-primary">{event.toProfileName}</span>
+                  </div>
+                  <p className="text-muted-foreground text-xs mt-1">{event.reason}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CyberCard>
       )}
     </Layout>
   );

@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startMonitor } from "./lib/anti-dpi-monitor";
+import { initMonitoringOnBoot } from "./services/monitoring";
 
 startMonitor();
 
@@ -25,4 +26,8 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  initMonitoringOnBoot().catch((bootErr) => {
+    logger.error({ err: bootErr }, "Failed to initialize monitoring on boot");
+  });
 });
