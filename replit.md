@@ -99,7 +99,7 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - Auth: JWT stored in localStorage (`vpn_token`), `AuthProvider` context in `src/lib/auth.tsx` sets `setAuthTokenGetter` for auto-attaching bearer tokens
 - Custom UI components: `src/components/ui/cyber.tsx` (CyberCard, CyberButton, CyberBadge, Modal, CyberInput)
 - Layout: `src/components/layout.tsx` — sidebar with XRAY branding and nav links
-- Default credentials: username=`admin`, password=`vpn_admin_2024`
+- Credentials: username from `ADMIN_USERNAME` env var (default: `admin`), password from `ADMIN_PASSWORD` Replit Secret
 
 ### API Routes (artifacts/api-server)
 
@@ -130,6 +130,16 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - `vpn_users` — id, uuid, name, status, trafficUsed, trafficLimit, expiresAt, createdAt
 - `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, isActive, createdAt
 - `audit_logs` — id, action, details, timestamp
+
+### Required Environment
+
+**Replit Secrets (required, no defaults — server fails to start without them):**
+- `ADMIN_PASSWORD` — password for admin login
+- `JWT_SECRET` — secret key for signing JWT tokens
+
+**Shared env vars (in `.replit`):**
+- `ADMIN_USERNAME` — admin login username (default: `admin`)
+- `DATABASE_URL` — auto-provided by Replit PostgreSQL
 
 ### `scripts` (`@workspace/scripts`)
 

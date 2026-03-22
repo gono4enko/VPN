@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Layout } from '@/components/layout';
 import { 
   useListUsers, useCreateUser, useUpdateUser, useDeleteUser, 
-  useBlockUser, useUnblockUser, useGetUserQr, useGetUserVlessUrl,
+  useBlockUser, useUnblockUser, useGetUserQr, getUserVlessUrl,
   getListUsersQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -100,11 +100,8 @@ export default function UsersPage() {
   };
 
   const copyUrl = async (id: number) => {
-    // We need to fetch it first since it's not in the list response
     try {
-      const token = localStorage.getItem('vpn_token');
-      const res = await fetch(`/api/users/${id}/vless-url`, { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
+      const data = await getUserVlessUrl(id);
       navigator.clipboard.writeText(data.vlessUrl);
       alert("VLESS URL copied to clipboard");
     } catch (e) {

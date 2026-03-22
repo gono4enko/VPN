@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Layout } from '@/components/layout';
 import { 
   useListProfiles, useCreateProfile, useImportProfileUrl, useImportProfileSub,
-  useDeleteProfile, useActivateProfile, usePingProfile,
+  useDeleteProfile, useActivateProfile, pingProfile,
   getListProfilesQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,7 +28,6 @@ export default function ProfilesPage() {
   const importSubMutation = useImportProfileSub();
   const deleteMutation = useDeleteProfile();
   const activateMutation = useActivateProfile();
-  const pingMutation = usePingProfile(0);
 
   const handleImportUrl = async (e?: React.FormEvent, customUrl?: string) => {
     e?.preventDefault();
@@ -69,12 +68,9 @@ export default function ProfilesPage() {
 
   const handlePing = async (id: number) => {
     try {
-      const token = localStorage.getItem('vpn_token');
-      const res = await fetch(`/api/profiles/${id}/ping`, { headers: { Authorization: `Bearer ${token}` } });
-      if(res.ok) {
-        queryClient.invalidateQueries({ queryKey: getListProfilesQueryKey() });
-      }
-    } catch (e) {}
+      await pingProfile(id);
+      queryClient.invalidateQueries({ queryKey: getListProfilesQueryKey() });
+    } catch {}
   };
 
   return (
