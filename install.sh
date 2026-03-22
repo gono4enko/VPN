@@ -180,7 +180,30 @@ ensure_postgres() {
 }
 ensure_postgres
 
-step "6/7 — Клонирование и сборка"
+ensure_xray() {
+  if command_exists xray; then
+    ok "Xray найден: $(xray version 2>/dev/null | head -1)"
+    return
+  fi
+
+  info "Установка Xray..."
+  if [ "$OS" = "darwin" ]; then
+    brew install xray
+  else
+    bash -c "$(curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+  fi
+
+  if command_exists xray; then
+    ok "Xray установлен: $(xray version 2>/dev/null | head -1)"
+  else
+    warn "Не удалось установить Xray автоматически. Установите вручную: https://github.com/XTLS/Xray-core"
+  fi
+}
+
+step "6/8 — Xray"
+ensure_xray
+
+step "7/8 — Клонирование и сборка"
 
 if [ -d "$INSTALL_DIR/.git" ]; then
   info "Обновление существующей установки в $INSTALL_DIR..."
@@ -302,7 +325,7 @@ PKGJSON
   ok "Сборка завершена (ручная)"
 fi
 
-step "7/7 — Настройка базы данных и конфигурация"
+step "8/8 — Настройка базы данных и конфигурация"
 
 DB_PASSWORD="vpn_$(openssl rand -hex 8 2>/dev/null || echo "changeme123")"
 JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | base64 | tr -d '=+/' | head -c 64)
