@@ -2,354 +2,326 @@
 set -euo pipefail
 
 REPO="gono4enko/VPN"
+REPO_URL="https://github.com/$REPO.git"
 APP_NAME="vpn-panel"
 DEFAULT_PORT=3000
+PG_DB="vpn_panel"
+PG_USER="vpn_panel"
+NODE_MIN=20
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 info()  { echo -e "${BLUE}[INFO]${NC}  $*"; }
 ok()    { echo -e "${GREEN}[OK]${NC}    $*"; }
 warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
-error() { echo -e "${RED}[ERROR]${NC} $*"; }
+fail()  { echo -e "${RED}[FAIL]${NC} $*"; }
+step()  { echo -e "\n${CYAN}── $* ──${NC}"; }
+
+check_cmd() { command -v "$1" &>/dev/null; }
 
 detect_os() {
   case "$(uname -s)" in
     Linux*)  echo "linux" ;;
     Darwin*) echo "darwin" ;;
-    *)       error "Неподдерживаемая ОС: $(uname -s)"; exit 1 ;;
+    *)       fail "Неподдерживаемая ОС: $(uname -s)"; exit 1 ;;
   esac
 }
 
 detect_arch() {
   case "$(uname -m)" in
-    x86_64|amd64)   echo "x86_64" ;;
-    arm64|aarch64)   echo "arm64" ;;
-    *)               error "Неподдерживаемая архитектура: $(uname -m)"; exit 1 ;;
+    x86_64|amd64)  echo "x86_64" ;;
+    arm64|aarch64)  echo "arm64" ;;
+    *)              fail "Неподдерживаемая архитектура: $(uname -m)"; exit 1 ;;
   esac
 }
 
-check_command() {
-  command -v "$1" &>/dev/null
-}
-
-get_latest_version() {
-  if check_command curl; then
-    curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | \
-      grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//'
-  elif check_command wget; then
-    wget -qO- "https://api.github.com/repos/$REPO/releases/latest" | \
-      grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/' | sed 's/^v//'
-  else
-    error "Необходим curl или wget для загрузки"
-    exit 1
-  fi
-}
-
-install_node_hint() {
-  local os="$1"
-  echo ""
-  warn "Node.js 22+ не найден!"
-  echo ""
-  if [ "$os" = "linux" ]; then
-    echo "  Установите Node.js:"
-    echo "    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -"
-    echo "    sudo apt-get install -y nodejs"
-  else
-    echo "  Установите Node.js через Homebrew:"
-    echo "    brew install node@22"
-  fi
-  echo ""
-}
-
-setup_postgres_hint() {
-  local os="$1"
-  echo ""
-  warn "PostgreSQL не найден или не запущен!"
-  echo ""
-  if [ "$os" = "linux" ]; then
-    echo "  Установите PostgreSQL:"
-    echo "    sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib"
-    echo "    sudo systemctl start postgresql"
-    echo "    sudo systemctl enable postgresql"
-  else
-    echo "  Установите PostgreSQL через Homebrew:"
-    echo "    brew install postgresql@16"
-    echo "    brew services start postgresql@16"
-  fi
-  echo ""
-}
-
 echo ""
-echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║     VPN Control Panel — Установка        ║${NC}"
-echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
+echo -e "${CYAN}╔══════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║   VPN Control Panel — Автоматическая установка  ║${NC}"
+echo -e "${CYAN}╚══════════════════════════════════════════════╝${NC}"
 echo ""
 
 OS=$(detect_os)
 ARCH=$(detect_arch)
-info "ОС: $OS, Архитектура: $ARCH"
+info "Платформа: $OS/$ARCH"
 
-if [ "$OS" = "linux" ]; then
-  INSTALL_DIR="/opt/$APP_NAME"
-else
+if [ "$OS" = "darwin" ]; then
   INSTALL_DIR="$HOME/$APP_NAME"
-fi
-
-read -rp "Директория установки [$INSTALL_DIR]: " CUSTOM_DIR
-INSTALL_DIR="${CUSTOM_DIR:-$INSTALL_DIR}"
-
-if [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/package.json" ]; then
-  warn "VPN Control Panel уже установлена в $INSTALL_DIR"
-  read -rp "Переустановить? (y/N): " REINSTALL
-  if [[ "$REINSTALL" != "y" && "$REINSTALL" != "Y" ]]; then
-    echo "Отменено."
-    exit 0
-  fi
-fi
-
-NODE_OK=false
-if check_command node; then
-  NODE_VERSION=$(node -v | sed 's/v//' | cut -d. -f1)
-  if [ "$NODE_VERSION" -ge 22 ]; then
-    ok "Node.js v$(node -v | sed 's/v//') найден"
-    NODE_OK=true
-  else
-    warn "Node.js $(node -v) найден, но требуется v22+"
-  fi
-fi
-
-if [ "$NODE_OK" = false ]; then
-  install_node_hint "$OS"
-  read -rp "Продолжить установку без Node.js? (y/N): " CONTINUE
-  if [[ "$CONTINUE" != "y" && "$CONTINUE" != "Y" ]]; then
-    exit 1
-  fi
-fi
-
-PG_OK=false
-if check_command psql; then
-  ok "PostgreSQL найден"
-  PG_OK=true
 else
-  for pg_path in /opt/homebrew/opt/postgresql@{17,16,15,14}/bin /usr/local/opt/postgresql@{17,16,15,14}/bin; do
+  INSTALL_DIR="/opt/$APP_NAME"
+fi
+
+step "1/7 — Homebrew (только macOS)"
+
+if [ "$OS" = "darwin" ]; then
+  if check_cmd brew; then
+    ok "Homebrew уже установлен"
+  else
+    info "Установка Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    if [ -f /opt/homebrew/bin/brew ]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [ -f /usr/local/bin/brew ]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    fi
+    ok "Homebrew установлен"
+  fi
+else
+  info "Linux — Homebrew не требуется"
+fi
+
+step "2/7 — Git"
+
+if check_cmd git; then
+  ok "Git найден: $(git --version)"
+else
+  info "Установка Git..."
+  if [ "$OS" = "darwin" ]; then
+    brew install git
+  else
+    sudo apt-get update -qq && sudo apt-get install -y -qq git
+  fi
+  ok "Git установлен"
+fi
+
+step "3/7 — Node.js"
+
+ensure_node() {
+  if check_cmd node; then
+    local ver
+    ver=$(node -v | sed 's/v//' | cut -d. -f1)
+    if [ "$ver" -ge "$NODE_MIN" ]; then
+      ok "Node.js v$(node -v | sed 's/v//') найден"
+      return 0
+    else
+      warn "Node.js v$(node -v | sed 's/v//') — слишком старая, нужна v${NODE_MIN}+"
+    fi
+  fi
+  info "Установка Node.js..."
+  if [ "$OS" = "darwin" ]; then
+    brew install node
+  else
+    if check_cmd curl; then
+      curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+    else
+      sudo apt-get update -qq && sudo apt-get install -y -qq curl
+      curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+    fi
+    sudo apt-get install -y -qq nodejs
+  fi
+  ok "Node.js v$(node -v | sed 's/v//') установлен"
+}
+ensure_node
+
+step "4/7 — pnpm"
+
+if check_cmd pnpm; then
+  ok "pnpm найден: v$(pnpm -v)"
+else
+  info "Установка pnpm..."
+  npm install -g pnpm
+  ok "pnpm установлен: v$(pnpm -v)"
+fi
+
+step "5/7 — PostgreSQL"
+
+find_pg_bin() {
+  if check_cmd psql; then
+    return 0
+  fi
+  for pg_path in /opt/homebrew/opt/postgresql@{17,16,15,14}/bin /usr/local/opt/postgresql@{17,16,15,14}/bin /usr/lib/postgresql/{17,16,15,14}/bin; do
     if [ -x "$pg_path/psql" ]; then
       export PATH="$pg_path:$PATH"
-      ok "PostgreSQL найден в $pg_path"
-      PG_OK=true
-      break
+      return 0
     fi
   done
-fi
+  return 1
+}
 
-if [ "$PG_OK" = false ]; then
-  if pg_isready &>/dev/null 2>&1 || [ -S /tmp/.s.PGSQL.5432 ] || [ -S /var/run/postgresql/.s.PGSQL.5432 ]; then
-    warn "PostgreSQL запущен, но psql не найден в PATH"
-    PG_OK=true
+ensure_postgres() {
+  if find_pg_bin; then
+    ok "PostgreSQL CLI найден: $(psql --version | head -1)"
   else
-    setup_postgres_hint "$OS"
-    read -rp "Продолжить установку без PostgreSQL? (y/N): " CONTINUE
-    if [[ "$CONTINUE" != "y" && "$CONTINUE" != "Y" ]]; then
-      exit 1
+    info "Установка PostgreSQL..."
+    if [ "$OS" = "darwin" ]; then
+      brew install postgresql@16
+      for pg_path in /opt/homebrew/opt/postgresql@{17,16,15,14}/bin /usr/local/opt/postgresql@{17,16,15,14}/bin; do
+        if [ -x "$pg_path/psql" ]; then
+          export PATH="$pg_path:$PATH"
+          break
+        fi
+      done
+    else
+      sudo apt-get update -qq && sudo apt-get install -y -qq postgresql postgresql-contrib
     fi
+    ok "PostgreSQL установлен"
   fi
-fi
 
-info "Получение последней версии..."
-VERSION=$(get_latest_version)
-if [ -z "$VERSION" ]; then
-  error "Не удалось получить версию. Проверьте доступ к GitHub."
-  read -rp "Введите версию вручную (например, 1.0.0): " VERSION
-  if [ -z "$VERSION" ]; then
-    exit 1
+  if [ "$OS" = "darwin" ]; then
+    if ! brew services list 2>/dev/null | grep -q "postgresql.*started"; then
+      info "Запуск PostgreSQL..."
+      brew services start postgresql@16 2>/dev/null || brew services start postgresql 2>/dev/null || true
+      sleep 2
+    fi
+    ok "PostgreSQL запущен (Homebrew)"
+  else
+    if ! sudo systemctl is-active --quiet postgresql 2>/dev/null; then
+      info "Запуск PostgreSQL..."
+      sudo systemctl start postgresql
+      sudo systemctl enable postgresql
+    fi
+    ok "PostgreSQL запущен (systemd)"
   fi
-fi
-ok "Версия: $VERSION"
+}
+ensure_postgres
 
-ARCHIVE="vpn-panel-${VERSION}-${OS}-${ARCH}.tar.gz"
-DOWNLOAD_URL="https://github.com/$REPO/releases/download/v${VERSION}/${ARCHIVE}"
+step "6/7 — Клонирование и сборка"
 
-info "Загрузка $ARCHIVE..."
-TMP_DIR=$(mktemp -d)
-trap 'rm -rf "$TMP_DIR"' EXIT
-
-if check_command curl; then
-  curl -fSL "$DOWNLOAD_URL" -o "$TMP_DIR/$ARCHIVE"
-elif check_command wget; then
-  wget -q "$DOWNLOAD_URL" -O "$TMP_DIR/$ARCHIVE"
-fi
-
-ok "Загрузка завершена"
-
-info "Распаковка..."
-cd "$TMP_DIR"
-tar -xzf "$ARCHIVE"
-EXTRACTED_DIR=$(ls -d vpn-panel-* | head -1)
-
-if [ "$OS" = "linux" ]; then
-  sudo mkdir -p "$INSTALL_DIR"
-  sudo cp -a "$TMP_DIR/$EXTRACTED_DIR/." "$INSTALL_DIR/"
-  sudo chown -R "$(whoami):$(id -gn)" "$INSTALL_DIR"
+if [ -d "$INSTALL_DIR/.git" ]; then
+  info "Обновление существующей установки в $INSTALL_DIR..."
+  cd "$INSTALL_DIR"
+  git fetch origin main
+  git reset --hard origin/main
+  ok "Код обновлён"
 else
-  mkdir -p "$INSTALL_DIR"
-  cp -a "$TMP_DIR/$EXTRACTED_DIR/." "$INSTALL_DIR/"
+  info "Клонирование $REPO в $INSTALL_DIR..."
+  if [ "$OS" = "linux" ]; then
+    sudo mkdir -p "$INSTALL_DIR"
+    sudo chown "$(whoami):$(id -gn)" "$INSTALL_DIR"
+  else
+    mkdir -p "$INSTALL_DIR"
+  fi
+  git clone "$REPO_URL" "$INSTALL_DIR"
+  ok "Репозиторий клонирован"
 fi
 
-ok "Распаковано в $INSTALL_DIR"
-
-info "Установка зависимостей..."
 cd "$INSTALL_DIR"
-npm install --production 2>/dev/null || warn "npm install не удался — установите зависимости вручную"
 
+info "Установка зависимостей (pnpm install)..."
+pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 ok "Зависимости установлены"
 
-echo ""
-info "Настройка конфигурации..."
+info "Сборка проекта..."
+pnpm run build:prod 2>/dev/null || {
+  warn "build:prod не найден, собираем вручную..."
+  pnpm --filter @workspace/vpn-panel run build
+  pnpm --filter @workspace/api-server run build
 
-if [ ! -f "$INSTALL_DIR/.env" ]; then
-  cp "$INSTALL_DIR/.env.example" "$INSTALL_DIR/.env"
+  mkdir -p deploy/dist
+  cp -r artifacts/api-server/dist/* deploy/dist/
+  cp -r artifacts/vpn-panel/dist/public deploy/dist/public
+  mkdir -p deploy/db-schema
+  cp -r lib/db/src/schema/* deploy/db-schema/
+}
+ok "Сборка завершена"
 
-  read -rp "Порт панели [$DEFAULT_PORT]: " USER_PORT
-  USER_PORT="${USER_PORT:-$DEFAULT_PORT}"
+step "7/7 — Настройка базы данных и конфигурация"
 
-  DB_PASSWORD=""
-  read -rsp "Пароль PostgreSQL для пользователя vpn_panel: " DB_PASSWORD
-  echo ""
-  if [ -z "$DB_PASSWORD" ]; then
-    DB_PASSWORD="vpn_panel_$(openssl rand -hex 8 2>/dev/null || echo "changeme")"
-    warn "Пароль сгенерирован автоматически: $DB_PASSWORD"
-  fi
+DB_PASSWORD="vpn_$(openssl rand -hex 8 2>/dev/null || echo "changeme123")"
+JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | base64 | tr -d '=+/' | head -c 64)
+APP_PORT="${APP_PORT:-$DEFAULT_PORT}"
 
-  JWT_SECRET=$(openssl rand -hex 32 2>/dev/null || head -c 64 /dev/urandom | base64 | tr -d '=+/' | head -c 64)
+DATABASE_URL="postgresql://${PG_USER}:${DB_PASSWORD}@localhost:5432/${PG_DB}"
 
-  sed -i.bak "s|PORT=3000|PORT=$USER_PORT|" "$INSTALL_DIR/.env"
-  sed -i.bak "s|your_password_here|$DB_PASSWORD|" "$INSTALL_DIR/.env"
-  sed -i.bak "s|change_me_to_random_secret|$JWT_SECRET|" "$INSTALL_DIR/.env"
-  rm -f "$INSTALL_DIR/.env.bak"
+info "Создание пользователя и базы данных PostgreSQL..."
 
-  ok "Конфигурация сохранена в $INSTALL_DIR/.env"
-else
-  ok "Файл .env уже существует, пропускаем настройку"
-fi
+if [ "$OS" = "darwin" ]; then
+  createuser "$PG_USER" 2>/dev/null && ok "Пользователь $PG_USER создан" || warn "Пользователь $PG_USER уже существует"
+  createdb "$PG_DB" -O "$PG_USER" 2>/dev/null && ok "База $PG_DB создана" || warn "База $PG_DB уже существует"
+  psql -d postgres -c "ALTER USER ${PG_USER} PASSWORD '${DB_PASSWORD}';" 2>/dev/null || warn "Не удалось установить пароль (возможно peer-auth)"
 
-if [ "$PG_OK" = true ]; then
-  info "Настройка базы данных..."
-  read -rp "Создать пользователя и базу данных PostgreSQL? (Y/n): " SETUP_DB
-  if [[ "$SETUP_DB" != "n" && "$SETUP_DB" != "N" ]]; then
-    DB_PASSWORD="${DB_PASSWORD:-$(grep -E '^DATABASE_URL=' "$INSTALL_DIR/.env" 2>/dev/null | sed -E 's|.*://[^:]+:([^@]+)@.*|\1|' || echo "changeme")}"
-
-    if [ "$OS" = "darwin" ]; then
-      createuser vpn_panel 2>/dev/null || warn "Пользователь vpn_panel уже существует"
-      createdb vpn_panel -O vpn_panel 2>/dev/null || warn "База данных vpn_panel уже существует"
-      psql -d postgres -c "ALTER USER vpn_panel PASSWORD '$DB_PASSWORD';" 2>/dev/null || warn "Не удалось установить пароль"
-    else
-      sudo -u postgres createuser vpn_panel 2>/dev/null || warn "Пользователь vpn_panel уже существует"
-      sudo -u postgres createdb vpn_panel -O vpn_panel 2>/dev/null || warn "База данных vpn_panel уже существует"
-      sudo -u postgres psql -c "ALTER USER vpn_panel PASSWORD '$DB_PASSWORD';" 2>/dev/null || warn "Не удалось установить пароль"
+  if ! psql -U "$PG_USER" -d "$PG_DB" -c "SELECT 1;" &>/dev/null; then
+    warn "Подключение с паролем не работает, пробуем peer/trust..."
+    DATABASE_URL="postgresql://${PG_USER}@localhost:5432/${PG_DB}"
+    if ! psql "$DATABASE_URL" -c "SELECT 1;" &>/dev/null; then
+      DATABASE_URL="postgres:///vpn_panel"
+      warn "Используем unix socket: $DATABASE_URL"
     fi
-    ok "База данных настроена"
-
-    info "Инициализация схемы базы данных..."
-    set -a; source "$INSTALL_DIR/.env"; set +a
-    cd "$INSTALL_DIR"
-    npx drizzle-kit push --config db/drizzle.config.ts 2>/dev/null || warn "Не удалось инициализировать схему — выполните вручную"
-    ok "Схема базы данных инициализирована"
   fi
+else
+  sudo -u postgres createuser "$PG_USER" 2>/dev/null && ok "Пользователь $PG_USER создан" || warn "Пользователь $PG_USER уже существует"
+  sudo -u postgres createdb "$PG_DB" -O "$PG_USER" 2>/dev/null && ok "База $PG_DB создана" || warn "База $PG_DB уже существует"
+  sudo -u postgres psql -c "ALTER USER ${PG_USER} PASSWORD '${DB_PASSWORD}';" 2>/dev/null || warn "Не удалось установить пароль"
 fi
 
-if [ "$OS" = "linux" ] && check_command systemctl; then
-  info "Настройка systemd-сервиса..."
-  read -rp "Создать systemd-сервис для автозапуска? (Y/n): " SETUP_SYSTEMD
-  if [[ "$SETUP_SYSTEMD" != "n" && "$SETUP_SYSTEMD" != "N" ]]; then
-    NODE_PATH=$(which node)
-    sudo tee /etc/systemd/system/vpn-panel.service > /dev/null <<SYSTEMD
-[Unit]
-Description=VPN Control Panel
-After=network.target postgresql.service
+ok "PostgreSQL настроен"
 
-[Service]
-Type=simple
-User=$(whoami)
-WorkingDirectory=$INSTALL_DIR
-EnvironmentFile=$INSTALL_DIR/.env
-Environment=NODE_ENV=production
-Environment=STATIC_DIR=$INSTALL_DIR/public
-ExecStart=$NODE_PATH --enable-source-maps $INSTALL_DIR/server/index.mjs
-Restart=on-failure
-RestartSec=5
+ENV_FILE="$INSTALL_DIR/deploy/.env"
+if [ ! -f "$ENV_FILE" ]; then
+  cat > "$ENV_FILE" <<ENVFILE
+DATABASE_URL=${DATABASE_URL}
+PORT=${APP_PORT}
+JWT_SECRET=${JWT_SECRET}
+NODE_ENV=production
+STATIC_DIR=./dist/public
+ENVFILE
+  ok "Конфигурация сохранена: $ENV_FILE"
+else
+  ok "Файл .env уже существует, пропускаем"
+fi
 
-[Install]
-WantedBy=multi-user.target
-SYSTEMD
+info "Применение схемы базы данных..."
+cd "$INSTALL_DIR/deploy"
+set -a; source .env; set +a
 
-    sudo systemctl daemon-reload
-    sudo systemctl enable vpn-panel
-    sudo systemctl start vpn-panel
+npm install --production 2>/dev/null || pnpm install 2>/dev/null || true
 
-    ok "Systemd-сервис создан и запущен"
-  fi
-elif [ "$OS" = "darwin" ]; then
-  info "Настройка launchd-агента..."
-  read -rp "Создать launchd-агент для автозапуска? (y/N): " SETUP_LAUNCHD
-  if [[ "$SETUP_LAUNCHD" == "y" || "$SETUP_LAUNCHD" == "Y" ]]; then
-    NODE_PATH=$(which node)
-    PLIST_DIR="$HOME/Library/LaunchAgents"
-    mkdir -p "$PLIST_DIR"
+npx drizzle-kit push --config ./drizzle.config.ts 2>/dev/null && ok "Схема применена" || {
+  warn "drizzle-kit push не удался, повторная попытка..."
+  npx drizzle-kit push --config ./drizzle.config.ts --force 2>/dev/null && ok "Схема применена (force)" || warn "Не удалось применить схему — запустите вручную: cd $INSTALL_DIR/deploy && npx drizzle-kit push"
+}
 
-    cat > "$PLIST_DIR/com.vpn-panel.plist" <<LAUNCHD
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>com.vpn-panel</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>$NODE_PATH</string>
-    <string>--enable-source-maps</string>
-    <string>$INSTALL_DIR/server/index.mjs</string>
-  </array>
-  <key>WorkingDirectory</key>
-  <string>$INSTALL_DIR</string>
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>NODE_ENV</key>
-    <string>production</string>
-    <key>STATIC_DIR</key>
-    <string>$INSTALL_DIR/public</string>
-  </dict>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>KeepAlive</key>
-  <true/>
-  <key>StandardOutPath</key>
-  <string>$INSTALL_DIR/vpn-panel.log</string>
-  <key>StandardErrorPath</key>
-  <string>$INSTALL_DIR/vpn-panel-error.log</string>
-</dict>
-</plist>
-LAUNCHD
+cd "$INSTALL_DIR"
+cat > "$INSTALL_DIR/start.sh" <<'STARTSH'
+#!/usr/bin/env bash
+DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$DIR/deploy"
+set -a; source .env; set +a
+echo "Запуск VPN Control Panel на http://localhost:${PORT:-3000}..."
+exec node --enable-source-maps dist/index.mjs
+STARTSH
+chmod +x "$INSTALL_DIR/start.sh"
 
-    launchctl load "$PLIST_DIR/com.vpn-panel.plist"
-    ok "Launchd-агент создан и запущен"
-  fi
+cat > "$INSTALL_DIR/stop.sh" <<'STOPSH'
+#!/usr/bin/env bash
+PID=$(pgrep -f "dist/index.mjs" || true)
+if [ -n "$PID" ]; then
+  kill "$PID"
+  echo "VPN Panel остановлен (PID: $PID)"
+else
+  echo "VPN Panel не запущен"
+fi
+STOPSH
+chmod +x "$INSTALL_DIR/stop.sh"
+
+info "Запуск VPN Control Panel..."
+cd "$INSTALL_DIR/deploy"
+set -a; source .env; set +a
+nohup node --enable-source-maps dist/index.mjs > "$INSTALL_DIR/vpn-panel.log" 2>&1 &
+APP_PID=$!
+
+sleep 2
+if kill -0 "$APP_PID" 2>/dev/null; then
+  ok "VPN Panel запущен (PID: $APP_PID)"
+else
+  warn "Процесс завершился — проверьте логи: $INSTALL_DIR/vpn-panel.log"
 fi
 
 echo ""
-echo -e "${GREEN}╔══════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║   Установка завершена!                    ║${NC}"
-echo -e "${GREEN}╚══════════════════════════════════════════╝${NC}"
+echo -e "${GREEN}╔══════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║   Установка завершена!                         ║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════════╝${NC}"
 echo ""
-echo "  Директория: $INSTALL_DIR"
-echo "  Панель:     http://localhost:${USER_PORT:-$DEFAULT_PORT}"
+echo -e "  ${CYAN}Панель:${NC}     http://localhost:${APP_PORT}"
+echo -e "  ${CYAN}Директория:${NC} $INSTALL_DIR"
+echo -e "  ${CYAN}Логи:${NC}       $INSTALL_DIR/vpn-panel.log"
 echo ""
-echo "  Управление:"
+echo -e "  ${CYAN}Управление:${NC}"
 echo "    $INSTALL_DIR/start.sh   — запуск"
 echo "    $INSTALL_DIR/stop.sh    — остановка"
-echo "    $INSTALL_DIR/status.sh  — статус"
-echo ""
-echo "  Документация: $INSTALL_DIR/README.md"
 echo ""
