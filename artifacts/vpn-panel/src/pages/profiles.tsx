@@ -177,6 +177,18 @@ export default function ProfilesPage() {
               <label className="text-xs font-mono text-muted-foreground">Alias</label>
               <CyberInput value={manualForm.name} onChange={e => setManualForm({...manualForm, name: e.target.value})} required />
             </div>
+            <div className="col-span-2 space-y-2">
+              <label className="text-xs font-mono text-muted-foreground">Protocol</label>
+              <select
+                value={manualForm.protocol}
+                onChange={e => setManualForm({...manualForm, protocol: e.target.value})}
+                className="w-full bg-background border border-primary/30 text-foreground px-3 py-2 font-mono text-sm focus:border-primary focus:outline-none"
+              >
+                <option value="vless">VLESS</option>
+                <option value="shadowsocks">Shadowsocks</option>
+                <option value="wireguard">WireGuard</option>
+              </select>
+            </div>
             <div className="space-y-2">
               <label className="text-xs font-mono text-muted-foreground">Address</label>
               <CyberInput value={manualForm.address} onChange={e => setManualForm({...manualForm, address: e.target.value})} required />
