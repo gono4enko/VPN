@@ -203,7 +203,7 @@ fi
 cd "$INSTALL_DIR"
 
 info "Установка зависимостей (pnpm install)..."
-pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+pnpm install --no-frozen-lockfile
 ok "Зависимости установлены"
 
 info "Сборка проекта..."
