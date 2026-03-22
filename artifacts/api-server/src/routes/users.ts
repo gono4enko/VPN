@@ -22,6 +22,7 @@ import {
   GetUserVlessUrlResponse,
 } from "@workspace/api-zod";
 import { getRealityPublicKey, getRealityShortId } from "../lib/reality-keys";
+import { reloadConfig } from "../services/xray-manager";
 
 const router: IRouter = Router();
 
@@ -78,6 +79,8 @@ router.post("/users", async (req, res): Promise<void> => {
     status: user.status,
   });
 
+  reloadConfig().catch(() => {});
+
   res.status(201).json(formatUser(user));
 });
 
@@ -132,6 +135,8 @@ router.delete("/users/:id", async (req, res): Promise<void> => {
 
   await recordChange("vpn_user", user.uuid, "delete");
 
+  reloadConfig().catch(() => {});
+
   res.sendStatus(204);
 });
 
@@ -153,6 +158,8 @@ router.post("/users/:id/block", async (req, res): Promise<void> => {
     trafficLimit: user.trafficLimit, trafficUsed: user.trafficUsed, status: user.status,
   });
 
+  reloadConfig().catch(() => {});
+
   res.json(BlockUserResponse.parse(formatUser(user)));
 });
 
@@ -173,6 +180,8 @@ router.post("/users/:id/unblock", async (req, res): Promise<void> => {
     name: user.name, uuid: user.uuid, flow: user.flow,
     trafficLimit: user.trafficLimit, trafficUsed: user.trafficUsed, status: user.status,
   });
+
+  reloadConfig().catch(() => {});
 
   res.json(UnblockUserResponse.parse(formatUser(user)));
 });

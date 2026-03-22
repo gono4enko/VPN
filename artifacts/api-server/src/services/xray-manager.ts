@@ -2,9 +2,8 @@ import { spawn, execSync, type ChildProcess } from "child_process";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-import { db, vpnProfilesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { buildXrayConfig } from "../lib/xray-config";
+import { db, vpnUsersTable } from "@workspace/db";
+import { buildServerXrayConfig } from "../lib/xray-server-config";
 import { logger } from "../lib/logger";
 import { trafficSnapshotsTable } from "@workspace/db/schema";
 
@@ -67,12 +66,8 @@ export async function startXray(): Promise<{ success: boolean; message: string }
     return { success: false, message: "Xray binary not found. Install Xray first: https://github.com/XTLS/Xray-core/releases" };
   }
 
-  const activeProfile = await db.select().from(vpnProfilesTable).where(eq(vpnProfilesTable.isActive, true));
-  if (activeProfile.length === 0) {
-    return { success: false, message: "No active VPN profile selected" };
-  }
-
-  const config = buildXrayConfig(activeProfile[0]);
+  const users = await db.select().from(vpnUsersTable);
+  const config = buildServerXrayConfig(users);
   await writeXrayConfig(config);
 
   return new Promise((resolve) => {
@@ -173,12 +168,8 @@ export async function restartXray(): Promise<{ success: boolean; message: string
 }
 
 export async function reloadConfig(): Promise<{ success: boolean; message: string }> {
-  const activeProfile = await db.select().from(vpnProfilesTable).where(eq(vpnProfilesTable.isActive, true));
-  if (activeProfile.length === 0) {
-    return { success: false, message: "No active VPN profile selected" };
-  }
-
-  const config = buildXrayConfig(activeProfile[0]);
+  const users = await db.select().from(vpnUsersTable);
+  const config = buildServerXrayConfig(users);
   await writeXrayConfig(config);
 
   if (processRunning && xrayProcess) {
@@ -328,6 +319,12 @@ export async function initXrayManager() {
   const detection = await detectXrayBinary();
   if (detection.installed) {
     logger.info({ version: detection.version }, "Xray binary detected");
+    const result = await startXray();
+    if (result.success) {
+      logger.info(result.message);
+    } else {
+      logger.warn({ message: result.message }, "Xray auto-start failed (will retry on manual restart)");
+    }
   } else {
     logger.warn("Xray binary not found - VPN features will be unavailable until Xray is installed");
   }

@@ -9,6 +9,7 @@ const SETTING_KEYS = {
   shortId: "reality_short_id",
 } as const;
 
+let cachedPrivateKey: string | null = null;
 let cachedPublicKey: string | null = null;
 let cachedShortId: string | null = null;
 
@@ -55,6 +56,7 @@ export async function initRealityKeys(): Promise<void> {
   const existingShortId = await getSetting(SETTING_KEYS.shortId);
 
   if (existingPublicKey && existingPrivateKey && existingShortId) {
+    cachedPrivateKey = existingPrivateKey;
     cachedPublicKey = existingPublicKey;
     cachedShortId = existingShortId;
     logger.info("REALITY keys loaded from database");
@@ -68,6 +70,7 @@ export async function initRealityKeys(): Promise<void> {
   await setSetting(SETTING_KEYS.publicKey, publicKey);
   await setSetting(SETTING_KEYS.shortId, shortId);
 
+  cachedPrivateKey = privateKey;
   cachedPublicKey = publicKey;
   cachedShortId = shortId;
 
@@ -78,6 +81,10 @@ function isValidOverride(value: string | undefined): value is string {
   if (!value) return false;
   const lower = value.toLowerCase();
   return !lower.includes("replace") && !lower.includes("placeholder") && value.trim().length > 0;
+}
+
+export function getRealityPrivateKey(): string {
+  return cachedPrivateKey ?? "";
 }
 
 export function getRealityPublicKey(): string {

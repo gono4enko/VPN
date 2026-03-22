@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { db, vpnUsersTable, vpnProfilesTable } from "@workspace/db";
+import { db, vpnUsersTable } from "@workspace/db";
 import { eq, count } from "drizzle-orm";
 import {
   GetServerStatusResponse,
@@ -28,7 +28,6 @@ router.get("/server/client-ip", async (req, res): Promise<void> => {
 
 router.get("/server/status", async (_req, res): Promise<void> => {
   const users = await db.select({ count: count() }).from(vpnUsersTable).where(eq(vpnUsersTable.status, "active"));
-  const activeProfile = await db.select().from(vpnProfilesTable).where(eq(vpnProfilesTable.isActive, true));
 
   const xray = getXrayStatus();
 
@@ -36,9 +35,9 @@ router.get("/server/status", async (_req, res): Promise<void> => {
     running: xray.running,
     uptime: xray.uptime || "0h 0m",
     version: xray.version || "Xray not installed",
-    activeOutbound: activeProfile.length > 0 ? `${activeProfile[0].countryFlag} ${activeProfile[0].name}` : null,
+    activeOutbound: "VLESS+Reality Server",
     connectedClients: users[0]?.count ?? 0,
-    currentPing: activeProfile.length > 0 ? (activeProfile[0].lastPing || null) : null,
+    currentPing: null,
   }));
 });
 
