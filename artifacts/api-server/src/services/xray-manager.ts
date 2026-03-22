@@ -76,41 +76,41 @@ export async function startXray(): Promise<{ success: boolean; message: string }
   await writeXrayConfig(config);
 
   return new Promise((resolve) => {
+    let resolved = false;
+    const done = (result: { success: boolean; message: string }) => {
+      if (!resolved) {
+        resolved = true;
+        resolve(result);
+      }
+    };
+
     try {
       xrayProcess = spawn(XRAY_BINARY, ["run", "-c", XRAY_CONFIG_PATH], {
         stdio: ["ignore", "pipe", "pipe"],
         detached: false,
       });
 
-      let startupError = "";
+      let startupOutput = "";
 
-      xrayProcess.stderr?.on("data", (data: Buffer) => {
-        const text = data.toString();
-        startupError += text;
+      const handleOutput = (text: string) => {
+        startupOutput += text;
         if (text.includes("started")) {
           processRunning = true;
           lastStartedAt = Date.now();
           logger.info("Xray process started successfully");
           startTrafficCollector();
-          resolve({ success: true, message: `Xray started (PID: ${xrayProcess?.pid})` });
+          done({ success: true, message: `Xray started (PID: ${xrayProcess?.pid})` });
         }
-      });
+      };
 
-      xrayProcess.stdout?.on("data", (data: Buffer) => {
-        const text = data.toString();
-        if (text.includes("started")) {
-          processRunning = true;
-          lastStartedAt = Date.now();
-          startTrafficCollector();
-          resolve({ success: true, message: `Xray started (PID: ${xrayProcess?.pid})` });
-        }
-      });
+      xrayProcess.stderr?.on("data", (data: Buffer) => handleOutput(data.toString()));
+      xrayProcess.stdout?.on("data", (data: Buffer) => handleOutput(data.toString()));
 
       xrayProcess.on("error", (err) => {
         processRunning = false;
         xrayProcess = null;
         logger.error({ err }, "Failed to start Xray process");
-        resolve({ success: false, message: `Failed to start Xray: ${err.message}` });
+        done({ success: false, message: `Failed to start Xray: ${err.message}` });
       });
 
       xrayProcess.on("exit", (code, signal) => {
@@ -118,18 +118,21 @@ export async function startXray(): Promise<{ success: boolean; message: string }
         xrayProcess = null;
         stopTrafficCollector();
         logger.info({ code, signal }, "Xray process exited");
+        done({ success: false, message: `Xray exited unexpectedly (code: ${code}, signal: ${signal}). Output: ${startupOutput.slice(0, 200)}` });
       });
 
       setTimeout(() => {
-        if (xrayProcess && !processRunning) {
+        if (!resolved && xrayProcess) {
           processRunning = true;
           lastStartedAt = Date.now();
           startTrafficCollector();
-          resolve({ success: true, message: `Xray started (PID: ${xrayProcess.pid})` });
+          done({ success: true, message: `Xray started (PID: ${xrayProcess.pid})` });
+        } else if (!resolved) {
+          done({ success: false, message: "Xray failed to start within timeout" });
         }
       }, 3000);
     } catch (err) {
-      resolve({ success: false, message: `Failed to spawn Xray: ${(err as Error).message}` });
+      done({ success: false, message: `Failed to spawn Xray: ${(err as Error).message}` });
     }
   });
 }
