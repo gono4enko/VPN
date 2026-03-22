@@ -13,4 +13,6 @@ export interface ServerConfig {
   autoSwitch: boolean;
   autoSwitchInterval: number;
   autoSwitchThreshold: number;
+  realityPublicKey: string;
+  realityShortId: string;
 }

@@ -7,6 +7,7 @@ import {
   GetServerConfigResponse,
   GetTrafficStatsResponse,
 } from "@workspace/api-zod";
+import { getRealityPublicKey, getRealityShortId } from "../lib/reality-keys";
 
 const router: IRouter = Router();
 
@@ -51,6 +52,8 @@ router.get("/server/config", async (_req, res): Promise<void> => {
     autoSwitch: false,
     autoSwitchInterval: 30,
     autoSwitchThreshold: 50,
+    realityPublicKey: getRealityPublicKey(),
+    realityShortId: getRealityShortId(),
   }));
 });
 

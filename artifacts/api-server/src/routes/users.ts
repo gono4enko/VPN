@@ -20,17 +20,18 @@ import {
   GetUserVlessUrlParams,
   GetUserVlessUrlResponse,
 } from "@workspace/api-zod";
+import { getRealityPublicKey, getRealityShortId } from "../lib/reality-keys";
 
 const router: IRouter = Router();
 
 const OFFICE_IP = process.env.OFFICE_IP || "happ.su";
 const OFFICE_PORT = process.env.OFFICE_PORT || "443";
-const OFFICE_PUBLIC_KEY = process.env.OFFICE_PUBLIC_KEY || "";
-const OFFICE_SHORT_ID = process.env.OFFICE_SHORT_ID || "";
 const OFFICE_SNI = process.env.OFFICE_SNI || "happ.su";
 
 function buildVlessUrl(uuid: string, name: string): string {
-  return `vless://${uuid}@${OFFICE_IP}:${OFFICE_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${OFFICE_SNI}&fp=random&pbk=${OFFICE_PUBLIC_KEY}&sid=${OFFICE_SHORT_ID}&type=tcp#${encodeURIComponent(name)}`;
+  const pbk = getRealityPublicKey();
+  const sid = getRealityShortId();
+  return `vless://${uuid}@${OFFICE_IP}:${OFFICE_PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${OFFICE_SNI}&fp=random&pbk=${pbk}&sid=${sid}&type=tcp#${encodeURIComponent(name)}`;
 }
 
 function formatUser(user: VpnUser) {

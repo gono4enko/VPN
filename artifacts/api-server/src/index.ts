@@ -3,6 +3,7 @@ import { logger } from "./lib/logger";
 import { startMonitor } from "./lib/anti-dpi-monitor";
 import { initMonitoringOnBoot } from "./services/monitoring";
 import { startClusterSync } from "./services/cluster-sync";
+import { initRealityKeys } from "./lib/reality-keys";
 
 startMonitor();
 startClusterSync();
@@ -21,15 +22,24 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
+async function start() {
+  await initRealityKeys();
 
-  logger.info({ port }, "Server listening");
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
 
-  initMonitoringOnBoot().catch((bootErr) => {
-    logger.error({ err: bootErr }, "Failed to initialize monitoring on boot");
+    logger.info({ port }, "Server listening");
+
+    initMonitoringOnBoot().catch((bootErr) => {
+      logger.error({ err: bootErr }, "Failed to initialize monitoring on boot");
+    });
   });
+}
+
+start().catch((err) => {
+  logger.error({ err }, "Failed to start server");
+  process.exit(1);
 });

@@ -1128,6 +1128,10 @@ components:
           type: integer
         autoSwitchThreshold:
           type: integer
+        realityPublicKey:
+          type: string
+        realityShortId:
+          type: string
       required:
         - officeIp
         - officePort
@@ -1135,6 +1139,8 @@ components:
         - autoSwitch
         - autoSwitchInterval
         - autoSwitchThreshold
+        - realityPublicKey
+        - realityShortId
     VpnUser:
       type: object
       properties:

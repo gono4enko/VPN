@@ -71,6 +71,8 @@ export const GetServerConfigResponse = zod.object({
   autoSwitch: zod.boolean(),
   autoSwitchInterval: zod.number(),
   autoSwitchThreshold: zod.number(),
+  realityPublicKey: zod.string(),
+  realityShortId: zod.string(),
 });
 
 /**

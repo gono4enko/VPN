@@ -18,7 +18,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { CyberCard, CyberButton, CyberInput } from '@/components/ui/cyber';
 import { CyberTooltip } from '@/components/ui/tooltip';
-import { Settings2, RefreshCw, Cpu, Network, Shield, Shuffle, Fingerprint, Layers, Play, Square, Clock, AlertTriangle } from 'lucide-react';
+import { Settings2, RefreshCw, Cpu, Network, Shield, Shuffle, Fingerprint, Layers, Play, Square, Clock, AlertTriangle, Key, Copy, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 const TRANSPORT_LABELS: Record<string, string> = {
@@ -55,6 +55,13 @@ export default function SettingsPage() {
   const [transportPriority, setTransportPriority] = useState<string[]>(["tcp", "ws", "grpc", "h2"]);
   const [autoFallback, setAutoFallback] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyToClipboard = (value: string, field: string) => {
+    navigator.clipboard.writeText(value);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   useEffect(() => {
     if (antiDpi) {
@@ -193,6 +200,52 @@ export default function SettingsPage() {
                 </CyberTooltip>
                 <CyberInput readOnly value={config?.officeSni || ''} className="opacity-70 bg-transparent" />
               </div>
+            </div>
+          )}
+        </CyberCard>
+
+        <CyberCard className="p-6">
+          <h3 className="text-xl font-display uppercase font-bold text-accent mb-6 flex items-center gap-2 border-b border-accent/20 pb-4">
+            <Key className="w-5 h-5" /> REALITY Ключи (Только чтение)
+          </h3>
+          
+          {isLoading ? (
+            <div className="animate-pulse text-accent font-mono">Загрузка ключей...</div>
+          ) : (
+            <div className="space-y-4 font-mono text-sm">
+              <div className="space-y-1">
+                <CyberTooltip text="Публичный ключ X25519 для REALITY — используется клиентами для подключения">
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider">Публичный ключ (pbk)</label>
+                </CyberTooltip>
+                <div className="flex gap-2">
+                  <CyberInput readOnly value={config?.realityPublicKey || ''} className="opacity-70 bg-transparent flex-1" />
+                  <button
+                    onClick={() => copyToClipboard(config?.realityPublicKey || '', 'pbk')}
+                    className="px-3 border border-accent/30 text-accent hover:bg-accent/10 transition-colors"
+                    title="Копировать"
+                  >
+                    {copiedField === 'pbk' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <CyberTooltip text="Short ID для REALITY — уникальный идентификатор для Xray конфигурации">
+                  <label className="text-muted-foreground text-xs uppercase tracking-wider">Short ID (sid)</label>
+                </CyberTooltip>
+                <div className="flex gap-2">
+                  <CyberInput readOnly value={config?.realityShortId || ''} className="opacity-70 bg-transparent flex-1" />
+                  <button
+                    onClick={() => copyToClipboard(config?.realityShortId || '', 'sid')}
+                    className="px-3 border border-accent/30 text-accent hover:bg-accent/10 transition-colors"
+                    title="Копировать"
+                  >
+                    {copiedField === 'sid' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground/50 mt-4 italic">
+                // Авто-генерация при первом запуске. Скопируйте для конфигурации Xray сервера.
+              </p>
             </div>
           )}
         </CyberCard>
