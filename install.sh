@@ -202,8 +202,9 @@ fi
 
 cd "$INSTALL_DIR"
 
-info "Установка зависимостей (pnpm install)..."
-pnpm install --no-frozen-lockfile
+info "Установка зависимостей..."
+rm -f pnpm-lock.yaml
+pnpm install
 ok "Зависимости установлены"
 
 info "Сборка проекта..."
