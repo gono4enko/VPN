@@ -3,3 +3,4 @@ export * from "./vpn-profiles";
 export * from "./vpn-servers";
 export * from "./monitoring";
 export * from "./audit-logs";
+export * from "./routing-rules";

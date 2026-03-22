@@ -23,6 +23,8 @@ tags:
     description: Server cluster management
   - name: monitoring
     description: Node monitoring and auto-switch
+  - name: routing
+    description: Routing rules and whitelist bypass
 paths:
   /healthz:
     get:
@@ -598,6 +600,188 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SwitchEvent"
+  /routing/rules:
+    get:
+      operationId: getRoutingRules
+      tags: [routing]
+      summary: List all routing rules
+      responses:
+        "200":
+          description: Routing rules list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoutingRule"
+    post:
+      operationId: createRoutingRule
+      tags: [routing]
+      summary: Create a routing rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoutingRuleCreate"
+      responses:
+        "201":
+          description: Created rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingRule"
+  /routing/rules/batch:
+    post:
+      operationId: batchImportRules
+      tags: [routing]
+      summary: Batch import routing rules
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoutingBatchImport"
+      responses:
+        "201":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+  /routing/rules/{id}:
+    put:
+      operationId: updateRoutingRule
+      tags: [routing]
+      summary: Update a routing rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoutingRuleUpdate"
+      responses:
+        "200":
+          description: Updated rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingRule"
+    delete:
+      operationId: deleteRoutingRule
+      tags: [routing]
+      summary: Delete a routing rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rule deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+  /routing/rules/{id}/toggle:
+    post:
+      operationId: toggleRoutingRule
+      tags: [routing]
+      summary: Toggle a routing rule on/off
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Toggled rule
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingRule"
+  /routing/rules/category/{category}:
+    delete:
+      operationId: deleteRulesByCategory
+      tags: [routing]
+      summary: Delete all rules in a category
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deletion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteCategoryResult"
+  /routing/presets:
+    get:
+      operationId: getRoutingPresets
+      tags: [routing]
+      summary: List available presets
+      responses:
+        "200":
+          description: Preset list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RoutingPreset"
+  /routing/presets/{presetId}/import:
+    post:
+      operationId: importRoutingPreset
+      tags: [routing]
+      summary: Import a preset
+      parameters:
+        - name: presetId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PresetImportResult"
+  /routing/export:
+    get:
+      operationId: exportRoutingRules
+      tags: [routing]
+      summary: Export all routing rules
+      responses:
+        "200":
+          description: Exported rules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingExport"
+  /routing/stats:
+    get:
+      operationId: getRoutingStats
+      tags: [routing]
+      summary: Get routing rules statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutingStats"
   /cluster/servers:
     get:
       operationId: listServers
@@ -1278,3 +1462,178 @@ components:
         - toProfileName
         - reason
         - createdAt
+    RoutingRule:
+      type: object
+      properties:
+        id:
+          type: integer
+        ruleType:
+          type: string
+        value:
+          type: string
+        action:
+          type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+        priority:
+          type: integer
+        category:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - ruleType
+        - value
+        - action
+        - enabled
+        - priority
+        - category
+        - createdAt
+    RoutingRuleCreate:
+      type: object
+      properties:
+        ruleType:
+          type: string
+        value:
+          type: string
+        action:
+          type: string
+        description:
+          type: string
+        priority:
+          type: integer
+        category:
+          type: string
+      required:
+        - ruleType
+        - value
+        - action
+    RoutingRuleUpdate:
+      type: object
+      properties:
+        ruleType:
+          type: string
+        value:
+          type: string
+        action:
+          type: string
+        description:
+          type: string
+        priority:
+          type: integer
+        category:
+          type: string
+        enabled:
+          type: boolean
+    RoutingBatchImport:
+      type: object
+      properties:
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoutingRuleCreate'
+      required:
+        - rules
+    RoutingPreset:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        count:
+          type: integer
+        action:
+          type: string
+      required:
+        - id
+        - name
+        - description
+        - count
+        - action
+    RoutingStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        enabled:
+          type: integer
+        disabled:
+          type: integer
+        byAction:
+          type: object
+          properties:
+            direct:
+              type: integer
+            proxy:
+              type: integer
+            block:
+              type: integer
+        byType:
+          type: object
+          properties:
+            domain:
+              type: integer
+            ip:
+              type: integer
+            cidr:
+              type: integer
+            regexp:
+              type: integer
+      required:
+        - total
+        - enabled
+        - disabled
+    RoutingExport:
+      type: object
+      properties:
+        version:
+          type: integer
+        exportedAt:
+          type: string
+        rules:
+          type: array
+          items:
+            type: object
+            properties:
+              ruleType:
+                type: string
+              value:
+                type: string
+              action:
+                type: string
+              description:
+                type: string
+              category:
+                type: string
+              priority:
+                type: integer
+    ImportResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+      required:
+        - imported
+    PresetImportResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        presetId:
+          type: string
+      required:
+        - imported
+        - presetId
+    DeleteCategoryResult:
+      type: object
+      properties:
+        deleted:
+          type: integer
+      required:
+        - deleted

@@ -22,8 +22,10 @@ import type {
   CreateProfileRequest,
   CreateServerRequest,
   CreateUserRequest,
+  DeleteCategoryResult,
   ErrorResponse,
   HealthStatus,
+  ImportResult,
   ImportSubRequest,
   ImportUrlRequest,
   LoginRequest,
@@ -33,7 +35,15 @@ import type {
   MonitoringActionResponse,
   MonitoringSettings,
   PingResult,
+  PresetImportResult,
   QrResponse,
+  RoutingBatchImport,
+  RoutingExport,
+  RoutingPreset,
+  RoutingRule,
+  RoutingRuleCreate,
+  RoutingRuleUpdate,
+  RoutingStats,
   ServerConfig,
   ServerStatus,
   SpeedtestResult,
@@ -2641,6 +2651,904 @@ export function useGetMonitoringEvents<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetMonitoringEventsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all routing rules
+ */
+export const getGetRoutingRulesUrl = () => {
+  return `/api/routing/rules`;
+};
+
+export const getRoutingRules = async (
+  options?: RequestInit,
+): Promise<RoutingRule[]> => {
+  return customFetch<RoutingRule[]>(getGetRoutingRulesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetRoutingRulesQueryKey = () => {
+  return [`/api/routing/rules`] as const;
+};
+
+export const getGetRoutingRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRoutingRules>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRoutingRules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRoutingRulesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRoutingRules>>> = ({
+    signal,
+  }) => getRoutingRules({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRoutingRules>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRoutingRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRoutingRules>>
+>;
+export type GetRoutingRulesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all routing rules
+ */
+
+export function useGetRoutingRules<
+  TData = Awaited<ReturnType<typeof getRoutingRules>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRoutingRules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRoutingRulesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a routing rule
+ */
+export const getCreateRoutingRuleUrl = () => {
+  return `/api/routing/rules`;
+};
+
+export const createRoutingRule = async (
+  routingRuleCreate: RoutingRuleCreate,
+  options?: RequestInit,
+): Promise<RoutingRule> => {
+  return customFetch<RoutingRule>(getCreateRoutingRuleUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(routingRuleCreate),
+  });
+};
+
+export const getCreateRoutingRuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRoutingRule>>,
+    TError,
+    { data: BodyType<RoutingRuleCreate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createRoutingRule>>,
+  TError,
+  { data: BodyType<RoutingRuleCreate> },
+  TContext
+> => {
+  const mutationKey = ["createRoutingRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createRoutingRule>>,
+    { data: BodyType<RoutingRuleCreate> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createRoutingRule(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateRoutingRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createRoutingRule>>
+>;
+export type CreateRoutingRuleMutationBody = BodyType<RoutingRuleCreate>;
+export type CreateRoutingRuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a routing rule
+ */
+export const useCreateRoutingRule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRoutingRule>>,
+    TError,
+    { data: BodyType<RoutingRuleCreate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createRoutingRule>>,
+  TError,
+  { data: BodyType<RoutingRuleCreate> },
+  TContext
+> => {
+  return useMutation(getCreateRoutingRuleMutationOptions(options));
+};
+
+/**
+ * @summary Batch import routing rules
+ */
+export const getBatchImportRulesUrl = () => {
+  return `/api/routing/rules/batch`;
+};
+
+export const batchImportRules = async (
+  routingBatchImport: RoutingBatchImport,
+  options?: RequestInit,
+): Promise<ImportResult> => {
+  return customFetch<ImportResult>(getBatchImportRulesUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(routingBatchImport),
+  });
+};
+
+export const getBatchImportRulesMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof batchImportRules>>,
+    TError,
+    { data: BodyType<RoutingBatchImport> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof batchImportRules>>,
+  TError,
+  { data: BodyType<RoutingBatchImport> },
+  TContext
+> => {
+  const mutationKey = ["batchImportRules"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof batchImportRules>>,
+    { data: BodyType<RoutingBatchImport> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return batchImportRules(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type BatchImportRulesMutationResult = NonNullable<
+  Awaited<ReturnType<typeof batchImportRules>>
+>;
+export type BatchImportRulesMutationBody = BodyType<RoutingBatchImport>;
+export type BatchImportRulesMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Batch import routing rules
+ */
+export const useBatchImportRules = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof batchImportRules>>,
+    TError,
+    { data: BodyType<RoutingBatchImport> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof batchImportRules>>,
+  TError,
+  { data: BodyType<RoutingBatchImport> },
+  TContext
+> => {
+  return useMutation(getBatchImportRulesMutationOptions(options));
+};
+
+/**
+ * @summary Update a routing rule
+ */
+export const getUpdateRoutingRuleUrl = (id: number) => {
+  return `/api/routing/rules/${id}`;
+};
+
+export const updateRoutingRule = async (
+  id: number,
+  routingRuleUpdate: RoutingRuleUpdate,
+  options?: RequestInit,
+): Promise<RoutingRule> => {
+  return customFetch<RoutingRule>(getUpdateRoutingRuleUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(routingRuleUpdate),
+  });
+};
+
+export const getUpdateRoutingRuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateRoutingRule>>,
+    TError,
+    { id: number; data: BodyType<RoutingRuleUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateRoutingRule>>,
+  TError,
+  { id: number; data: BodyType<RoutingRuleUpdate> },
+  TContext
+> => {
+  const mutationKey = ["updateRoutingRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateRoutingRule>>,
+    { id: number; data: BodyType<RoutingRuleUpdate> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateRoutingRule(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateRoutingRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateRoutingRule>>
+>;
+export type UpdateRoutingRuleMutationBody = BodyType<RoutingRuleUpdate>;
+export type UpdateRoutingRuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a routing rule
+ */
+export const useUpdateRoutingRule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateRoutingRule>>,
+    TError,
+    { id: number; data: BodyType<RoutingRuleUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateRoutingRule>>,
+  TError,
+  { id: number; data: BodyType<RoutingRuleUpdate> },
+  TContext
+> => {
+  return useMutation(getUpdateRoutingRuleMutationOptions(options));
+};
+
+/**
+ * @summary Delete a routing rule
+ */
+export const getDeleteRoutingRuleUrl = (id: number) => {
+  return `/api/routing/rules/${id}`;
+};
+
+export const deleteRoutingRule = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MessageResponse> => {
+  return customFetch<MessageResponse>(getDeleteRoutingRuleUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteRoutingRuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRoutingRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteRoutingRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteRoutingRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteRoutingRule>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteRoutingRule(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteRoutingRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteRoutingRule>>
+>;
+
+export type DeleteRoutingRuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a routing rule
+ */
+export const useDeleteRoutingRule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRoutingRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteRoutingRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteRoutingRuleMutationOptions(options));
+};
+
+/**
+ * @summary Toggle a routing rule on/off
+ */
+export const getToggleRoutingRuleUrl = (id: number) => {
+  return `/api/routing/rules/${id}/toggle`;
+};
+
+export const toggleRoutingRule = async (
+  id: number,
+  options?: RequestInit,
+): Promise<RoutingRule> => {
+  return customFetch<RoutingRule>(getToggleRoutingRuleUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getToggleRoutingRuleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleRoutingRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof toggleRoutingRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["toggleRoutingRule"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof toggleRoutingRule>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return toggleRoutingRule(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ToggleRoutingRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof toggleRoutingRule>>
+>;
+
+export type ToggleRoutingRuleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Toggle a routing rule on/off
+ */
+export const useToggleRoutingRule = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof toggleRoutingRule>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof toggleRoutingRule>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getToggleRoutingRuleMutationOptions(options));
+};
+
+/**
+ * @summary Delete all rules in a category
+ */
+export const getDeleteRulesByCategoryUrl = (category: string) => {
+  return `/api/routing/rules/category/${category}`;
+};
+
+export const deleteRulesByCategory = async (
+  category: string,
+  options?: RequestInit,
+): Promise<DeleteCategoryResult> => {
+  return customFetch<DeleteCategoryResult>(
+    getDeleteRulesByCategoryUrl(category),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteRulesByCategoryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRulesByCategory>>,
+    TError,
+    { category: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteRulesByCategory>>,
+  TError,
+  { category: string },
+  TContext
+> => {
+  const mutationKey = ["deleteRulesByCategory"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteRulesByCategory>>,
+    { category: string }
+  > = (props) => {
+    const { category } = props ?? {};
+
+    return deleteRulesByCategory(category, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteRulesByCategoryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteRulesByCategory>>
+>;
+
+export type DeleteRulesByCategoryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete all rules in a category
+ */
+export const useDeleteRulesByCategory = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteRulesByCategory>>,
+    TError,
+    { category: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteRulesByCategory>>,
+  TError,
+  { category: string },
+  TContext
+> => {
+  return useMutation(getDeleteRulesByCategoryMutationOptions(options));
+};
+
+/**
+ * @summary List available presets
+ */
+export const getGetRoutingPresetsUrl = () => {
+  return `/api/routing/presets`;
+};
+
+export const getRoutingPresets = async (
+  options?: RequestInit,
+): Promise<RoutingPreset[]> => {
+  return customFetch<RoutingPreset[]>(getGetRoutingPresetsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetRoutingPresetsQueryKey = () => {
+  return [`/api/routing/presets`] as const;
+};
+
+export const getGetRoutingPresetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRoutingPresets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRoutingPresets>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRoutingPresetsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getRoutingPresets>>
+  > = ({ signal }) => getRoutingPresets({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRoutingPresets>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRoutingPresetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRoutingPresets>>
+>;
+export type GetRoutingPresetsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List available presets
+ */
+
+export function useGetRoutingPresets<
+  TData = Awaited<ReturnType<typeof getRoutingPresets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRoutingPresets>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRoutingPresetsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Import a preset
+ */
+export const getImportRoutingPresetUrl = (presetId: string) => {
+  return `/api/routing/presets/${presetId}/import`;
+};
+
+export const importRoutingPreset = async (
+  presetId: string,
+  options?: RequestInit,
+): Promise<PresetImportResult> => {
+  return customFetch<PresetImportResult>(getImportRoutingPresetUrl(presetId), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getImportRoutingPresetMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importRoutingPreset>>,
+    TError,
+    { presetId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importRoutingPreset>>,
+  TError,
+  { presetId: string },
+  TContext
+> => {
+  const mutationKey = ["importRoutingPreset"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importRoutingPreset>>,
+    { presetId: string }
+  > = (props) => {
+    const { presetId } = props ?? {};
+
+    return importRoutingPreset(presetId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportRoutingPresetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importRoutingPreset>>
+>;
+
+export type ImportRoutingPresetMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Import a preset
+ */
+export const useImportRoutingPreset = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importRoutingPreset>>,
+    TError,
+    { presetId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importRoutingPreset>>,
+  TError,
+  { presetId: string },
+  TContext
+> => {
+  return useMutation(getImportRoutingPresetMutationOptions(options));
+};
+
+/**
+ * @summary Export all routing rules
+ */
+export const getExportRoutingRulesUrl = () => {
+  return `/api/routing/export`;
+};
+
+export const exportRoutingRules = async (
+  options?: RequestInit,
+): Promise<RoutingExport> => {
+  return customFetch<RoutingExport>(getExportRoutingRulesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportRoutingRulesQueryKey = () => {
+  return [`/api/routing/export`] as const;
+};
+
+export const getExportRoutingRulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportRoutingRules>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportRoutingRules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportRoutingRulesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof exportRoutingRules>>
+  > = ({ signal }) => exportRoutingRules({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportRoutingRules>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportRoutingRulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportRoutingRules>>
+>;
+export type ExportRoutingRulesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Export all routing rules
+ */
+
+export function useExportRoutingRules<
+  TData = Awaited<ReturnType<typeof exportRoutingRules>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof exportRoutingRules>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportRoutingRulesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get routing rules statistics
+ */
+export const getGetRoutingStatsUrl = () => {
+  return `/api/routing/stats`;
+};
+
+export const getRoutingStats = async (
+  options?: RequestInit,
+): Promise<RoutingStats> => {
+  return customFetch<RoutingStats>(getGetRoutingStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetRoutingStatsQueryKey = () => {
+  return [`/api/routing/stats`] as const;
+};
+
+export const getGetRoutingStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getRoutingStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRoutingStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetRoutingStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getRoutingStats>>> = ({
+    signal,
+  }) => getRoutingStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getRoutingStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetRoutingStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getRoutingStats>>
+>;
+export type GetRoutingStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get routing rules statistics
+ */
+
+export function useGetRoutingStats<
+  TData = Awaited<ReturnType<typeof getRoutingStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getRoutingStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetRoutingStatsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

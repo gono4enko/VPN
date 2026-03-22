@@ -283,3 +283,95 @@ export interface SwitchEvent {
   pingAfter?: number | null;
   createdAt: string;
 }
+
+export interface RoutingRule {
+  id: number;
+  ruleType: string;
+  value: string;
+  action: string;
+  description?: string;
+  enabled: boolean;
+  priority: number;
+  category: string;
+  createdAt: string;
+}
+
+export interface RoutingRuleCreate {
+  ruleType: string;
+  value: string;
+  action: string;
+  description?: string;
+  priority?: number;
+  category?: string;
+}
+
+export interface RoutingRuleUpdate {
+  ruleType?: string;
+  value?: string;
+  action?: string;
+  description?: string;
+  priority?: number;
+  category?: string;
+  enabled?: boolean;
+}
+
+export interface RoutingBatchImport {
+  rules: RoutingRuleCreate[];
+}
+
+export interface RoutingPreset {
+  id: string;
+  name: string;
+  description: string;
+  count: number;
+  action: string;
+}
+
+export type RoutingStatsByAction = {
+  direct?: number;
+  proxy?: number;
+  block?: number;
+};
+
+export type RoutingStatsByType = {
+  domain?: number;
+  ip?: number;
+  cidr?: number;
+  regexp?: number;
+};
+
+export interface RoutingStats {
+  total: number;
+  enabled: number;
+  disabled: number;
+  byAction?: RoutingStatsByAction;
+  byType?: RoutingStatsByType;
+}
+
+export type RoutingExportRulesItem = {
+  ruleType?: string;
+  value?: string;
+  action?: string;
+  description?: string;
+  category?: string;
+  priority?: number;
+};
+
+export interface RoutingExport {
+  version?: number;
+  exportedAt?: string;
+  rules?: RoutingExportRulesItem[];
+}
+
+export interface ImportResult {
+  imported: number;
+}
+
+export interface PresetImportResult {
+  imported: number;
+  presetId: string;
+}
+
+export interface DeleteCategoryResult {
+  deleted: number;
+}

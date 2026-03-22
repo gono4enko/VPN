@@ -483,6 +483,185 @@ export const GetMonitoringEventsResponse = zod.array(
 );
 
 /**
+ * @summary List all routing rules
+ */
+export const GetRoutingRulesResponseItem = zod.object({
+  id: zod.number(),
+  ruleType: zod.string(),
+  value: zod.string(),
+  action: zod.string(),
+  description: zod.string().optional(),
+  enabled: zod.boolean(),
+  priority: zod.number(),
+  category: zod.string(),
+  createdAt: zod.string(),
+});
+export const GetRoutingRulesResponse = zod.array(GetRoutingRulesResponseItem);
+
+/**
+ * @summary Create a routing rule
+ */
+export const CreateRoutingRuleBody = zod.object({
+  ruleType: zod.string(),
+  value: zod.string(),
+  action: zod.string(),
+  description: zod.string().optional(),
+  priority: zod.number().optional(),
+  category: zod.string().optional(),
+});
+
+/**
+ * @summary Batch import routing rules
+ */
+export const BatchImportRulesBody = zod.object({
+  rules: zod.array(
+    zod.object({
+      ruleType: zod.string(),
+      value: zod.string(),
+      action: zod.string(),
+      description: zod.string().optional(),
+      priority: zod.number().optional(),
+      category: zod.string().optional(),
+    }),
+  ),
+});
+
+/**
+ * @summary Update a routing rule
+ */
+export const UpdateRoutingRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateRoutingRuleBody = zod.object({
+  ruleType: zod.string().optional(),
+  value: zod.string().optional(),
+  action: zod.string().optional(),
+  description: zod.string().optional(),
+  priority: zod.number().optional(),
+  category: zod.string().optional(),
+  enabled: zod.boolean().optional(),
+});
+
+export const UpdateRoutingRuleResponse = zod.object({
+  id: zod.number(),
+  ruleType: zod.string(),
+  value: zod.string(),
+  action: zod.string(),
+  description: zod.string().optional(),
+  enabled: zod.boolean(),
+  priority: zod.number(),
+  category: zod.string(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Delete a routing rule
+ */
+export const DeleteRoutingRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteRoutingRuleResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
+ * @summary Toggle a routing rule on/off
+ */
+export const ToggleRoutingRuleParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ToggleRoutingRuleResponse = zod.object({
+  id: zod.number(),
+  ruleType: zod.string(),
+  value: zod.string(),
+  action: zod.string(),
+  description: zod.string().optional(),
+  enabled: zod.boolean(),
+  priority: zod.number(),
+  category: zod.string(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Delete all rules in a category
+ */
+export const DeleteRulesByCategoryParams = zod.object({
+  category: zod.coerce.string(),
+});
+
+export const DeleteRulesByCategoryResponse = zod.object({
+  deleted: zod.number(),
+});
+
+/**
+ * @summary List available presets
+ */
+export const GetRoutingPresetsResponseItem = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  description: zod.string(),
+  count: zod.number(),
+  action: zod.string(),
+});
+export const GetRoutingPresetsResponse = zod.array(
+  GetRoutingPresetsResponseItem,
+);
+
+/**
+ * @summary Import a preset
+ */
+export const ImportRoutingPresetParams = zod.object({
+  presetId: zod.coerce.string(),
+});
+
+/**
+ * @summary Export all routing rules
+ */
+export const ExportRoutingRulesResponse = zod.object({
+  version: zod.number().optional(),
+  exportedAt: zod.string().optional(),
+  rules: zod
+    .array(
+      zod.object({
+        ruleType: zod.string().optional(),
+        value: zod.string().optional(),
+        action: zod.string().optional(),
+        description: zod.string().optional(),
+        category: zod.string().optional(),
+        priority: zod.number().optional(),
+      }),
+    )
+    .optional(),
+});
+
+/**
+ * @summary Get routing rules statistics
+ */
+export const GetRoutingStatsResponse = zod.object({
+  total: zod.number(),
+  enabled: zod.number(),
+  disabled: zod.number(),
+  byAction: zod
+    .object({
+      direct: zod.number().optional(),
+      proxy: zod.number().optional(),
+      block: zod.number().optional(),
+    })
+    .optional(),
+  byType: zod
+    .object({
+      domain: zod.number().optional(),
+      ip: zod.number().optional(),
+      cidr: zod.number().optional(),
+      regexp: zod.number().optional(),
+    })
+    .optional(),
+});
+
+/**
  * @summary List all servers in cluster
  */
 export const ListServersResponseItem = zod.object({

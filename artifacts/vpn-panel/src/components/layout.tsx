@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { LayoutDashboard, Users, Globe, Server, Settings, TerminalSquare } from 'lucide-react';
+import { LayoutDashboard, Users, Globe, Server, Settings, TerminalSquare, Route as RouteIcon } from 'lucide-react';
 import { cn } from './ui/cyber';
 import { CyberTooltip } from './ui/tooltip';
 
@@ -8,6 +8,7 @@ const navItems = [
   { href: "/", label: "Панель", icon: LayoutDashboard, tooltip: "Главная панель мониторинга системы" },
   { href: "/users", label: "Пользователи", icon: Users, tooltip: "Управление клиентскими аккаунтами VPN" },
   { href: "/profiles", label: "Профили", icon: Globe, tooltip: "Внешние маршруты и узлы подключения" },
+  { href: "/routing", label: "Маршруты", icon: RouteIcon, tooltip: "Правила обхода: какие сайты идут напрямую, через VPN или блокируются" },
   { href: "/cluster", label: "Кластер", icon: Server, tooltip: "Распределённый кластер VPN-серверов" },
   { href: "/settings", label: "Система", icon: Settings, tooltip: "Конфигурация и параметры сервера" },
 ];

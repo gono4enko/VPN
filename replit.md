@@ -95,7 +95,7 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 
 React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on dark navy). Uses wouter v3 for routing, TanStack React Query via generated hooks from `@workspace/api-client-react`.
 
-- Routes: `/` (dashboard), `/users`, `/profiles`, `/cluster`, `/settings`
+- Routes: `/` (dashboard), `/users`, `/profiles`, `/routing`, `/cluster`, `/settings`
 - Auth: Removed — all routes are publicly accessible (no login required)
 - Custom UI components: `src/components/ui/cyber.tsx` (CyberCard, CyberButton, CyberBadge, Modal, CyberInput)
 - Tooltips: `src/components/ui/tooltip.tsx` — CyberTooltip component wrapping Radix UI tooltips with cyberpunk styling, TooltipProvider in App.tsx
@@ -139,6 +139,17 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - `GET /api/cluster/servers/:id/ping` — ping server
 - `POST /api/cluster/servers/:id/set-primary` — set primary server
 - `GET /api/cluster/stats` — cluster statistics
+- `GET /api/routing/rules` — list routing rules
+- `POST /api/routing/rules` — create routing rule (domain/ip/cidr/regexp, direct/proxy/block)
+- `POST /api/routing/rules/batch` — batch import routing rules
+- `PUT /api/routing/rules/:id` — update routing rule
+- `DELETE /api/routing/rules/:id` — delete routing rule
+- `POST /api/routing/rules/:id/toggle` — toggle routing rule on/off
+- `DELETE /api/routing/rules/category/:category` — delete all rules in category
+- `GET /api/routing/presets` — list available presets
+- `POST /api/routing/presets/:presetId/import` — import a preset (ru-direct, streaming-proxy, social-proxy, ads-block, gaming-direct)
+- `GET /api/routing/export` — export all rules as JSON
+- `GET /api/routing/stats` — routing rules statistics
 - `GET /api/monitoring/settings` — monitoring settings and status
 - `PUT /api/monitoring/settings` — update monitoring settings (intervalSeconds, pingThresholdMs, autoSwitch)
 - `POST /api/monitoring/start` — start background monitoring
@@ -151,6 +162,7 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - `vpn_users` — id, uuid, name, status, trafficUsed, trafficLimit, expiresAt, createdAt
 - `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, lastDownloadSpeed, lastCheckAt, isOnline, isActive, createdAt
 - `vpn_servers` — id, name, address, port, country, countryFlag, provider, status, lastPing, cpuUsage, memUsage, bandwidthUsed, bandwidthLimit, connectedClients, maxClients, isPrimary, createdAt
+- `routing_rules` — id, ruleType (domain/ip/cidr/regexp), value, action (direct/proxy/block), description, enabled, priority, category, createdAt
 - `monitoring_settings` — id, enabled, intervalSeconds, pingThresholdMs, autoSwitch, lastCheckAt
 - `switch_event_log` — id, fromProfileId, fromProfileName, toProfileId, toProfileName, reason, pingBefore, pingAfter, createdAt
 - `audit_logs` — id, action, details, timestamp
