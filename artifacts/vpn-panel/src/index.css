@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Rajdhani', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Cyberpunk Dark Theme */
+  --color-background: hsl(225 44% 7%);
+  --color-foreground: hsl(190 20% 90%);
+  
+  --color-card: hsl(225 40% 11%);
+  --color-card-foreground: hsl(190 20% 90%);
+  
+  --color-primary: hsl(168 100% 41%); /* Neon Teal */
+  --color-primary-foreground: hsl(225 44% 7%);
+  
+  --color-accent: hsl(280 100% 60%); /* Neon Purple */
+  --color-accent-foreground: hsl(255 100% 100%);
+  
+  --color-destructive: hsl(348 83% 47%); /* Neon Red/Pink */
+  --color-destructive-foreground: hsl(255 100% 100%);
+  
+  --color-muted: hsl(225 30% 16%);
+  --color-muted-foreground: hsl(225 20% 60%);
+  
+  --color-border: hsla(168, 100%, 41%, 0.2);
+  --color-ring: hsl(168 100% 41%);
+
+  --radius-xl: 0.5rem;
+  --radius-lg: 0.25rem;
+  --radius-md: 0.125rem;
+  --radius-sm: 0px;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
+    background-image: 
+      linear-gradient(to right, rgba(0, 212, 170, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 212, 170, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-wide uppercase;
+  }
+}
+
+@layer components {
+  .cyber-card {
+    @apply bg-card/80 border border-primary/30 relative overflow-hidden backdrop-blur-md shadow-[0_0_15px_rgba(0,0,0,0.5)];
+  }
+  .cyber-card::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/60 to-transparent;
+  }
+  
+  .cyber-button {
+    @apply font-display font-bold uppercase tracking-wider px-6 py-2.5 
+           bg-primary/10 text-primary border border-primary/50 
+           hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_20px_rgba(0,212,170,0.6)] 
+           disabled:opacity-50 disabled:pointer-events-none disabled:hover:shadow-none
+           transition-all duration-300 active:scale-[0.98] inline-flex items-center justify-center gap-2;
+  }
+  
+  .cyber-button-destructive {
+    @apply bg-destructive/10 text-destructive border-destructive/50 
+           hover:bg-destructive hover:text-destructive-foreground hover:shadow-[0_0_20px_rgba(220,38,38,0.6)];
+  }
+
+  .cyber-button-outline {
+    @apply bg-transparent text-foreground border-muted-foreground/30
+           hover:bg-muted hover:text-primary hover:border-primary/50 hover:shadow-none;
+  }
+  
+  .cyber-input {
+    @apply bg-background/80 border border-primary/30 text-primary font-mono px-4 py-2.5 w-full
+           focus:outline-none focus:border-primary focus:shadow-[0_0_12px_rgba(0,212,170,0.25)] 
+           placeholder:text-muted-foreground/50 transition-all duration-300;
+  }
+  
+  .cyber-badge {
+    @apply px-2.5 py-0.5 font-mono text-xs uppercase tracking-wider border border-primary/50 text-primary bg-primary/10 inline-flex items-center;
+  }
+  
+  .cyber-badge-destructive {
+    @apply border-destructive/50 text-destructive bg-destructive/10;
+  }
+
+  .cyber-badge-muted {
+    @apply border-muted-foreground/30 text-muted-foreground bg-muted/50;
+  }
+}
+
+/* Custom Scrollbar for Terminal feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--color-background)); 
+  border-left: 1px solid hsla(168, 100%, 41%, 0.1);
+}
+::-webkit-scrollbar-thumb {
+  background: hsla(168, 100%, 41%, 0.3); 
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsla(168, 100%, 41%, 0.6); 
+}

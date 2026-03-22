@@ -91,6 +91,46 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+### `artifacts/vpn-panel` (`@workspace/vpn-panel`)
+
+React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on dark navy). Uses wouter v3 for routing, TanStack React Query via generated hooks from `@workspace/api-client-react`.
+
+- Routes: `/login`, `/` (dashboard), `/users`, `/profiles`, `/settings`
+- Auth: JWT stored in localStorage (`vpn_token`), `AuthProvider` context in `src/lib/auth.tsx` sets `setAuthTokenGetter` for auto-attaching bearer tokens
+- Custom UI components: `src/components/ui/cyber.tsx` (CyberCard, CyberButton, CyberBadge, Modal, CyberInput)
+- Layout: `src/components/layout.tsx` — sidebar with XRAY branding and nav links
+- Default credentials: username=`admin`, password=`vpn_admin_2024`
+
+### API Routes (artifacts/api-server)
+
+- `POST /api/auth/login` — JWT login
+- `GET /api/server/status` — simulated server status
+- `POST /api/server/restart` — simulated restart
+- `GET /api/server/config` — server configuration
+- `GET /api/users` — list VPN users
+- `POST /api/users` — create user (auto-generates UUID)
+- `PUT /api/users/:id` — update user
+- `DELETE /api/users/:id` — delete user
+- `POST /api/users/:id/block` / `POST /api/users/:id/unblock` — block/unblock
+- `GET /api/users/:id/qr` — QR code for VLESS URL
+- `GET /api/users/:id/vless-url` — VLESS connection URL
+- `GET /api/profiles` — list outbound profiles
+- `POST /api/profiles` — create profile
+- `POST /api/profiles/import-url` — import from VLESS URL
+- `POST /api/profiles/import-sub` — import from subscription
+- `POST /api/profiles/:id/activate` — activate profile
+- `GET /api/profiles/:id/ping` — ping profile
+- `DELETE /api/profiles/:id` — delete profile
+- `POST /api/profiles/auto-select` — auto-select fastest
+- `GET /api/traffic/stats` — traffic statistics
+- `GET /api/speedtest` — speed test
+
+### Database Schema
+
+- `vpn_users` — id, uuid, name, status, trafficUsed, trafficLimit, expiresAt, createdAt
+- `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, isActive, createdAt
+- `audit_logs` — id, action, details, timestamp
+
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.

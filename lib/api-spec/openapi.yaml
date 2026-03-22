@@ -1,15 +1,24 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: VPN Control Panel API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: VPN user management
+  - name: profiles
+    description: VPN profile management
+  - name: server
+    description: Xray server management
+  - name: speedtest
+    description: Speed testing
 paths:
   /healthz:
     get:
@@ -24,6 +33,476 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user info
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /server/status:
+    get:
+      operationId: getServerStatus
+      tags: [server]
+      summary: Get Xray server status
+      responses:
+        "200":
+          description: Server status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerStatus"
+  /server/restart:
+    post:
+      operationId: restartServer
+      tags: [server]
+      summary: Restart Xray server
+      responses:
+        "200":
+          description: Restart result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+  /server/config:
+    get:
+      operationId: getServerConfig
+      tags: [server]
+      summary: Get current server config
+      responses:
+        "200":
+          description: Server config
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerConfig"
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all VPN users
+      responses:
+        "200":
+          description: User list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VpnUser"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a new VPN user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnUser"
+  /users/{id}:
+    put:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a VPN user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnUser"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a VPN user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: User deleted
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{id}/block:
+    post:
+      operationId: blockUser
+      tags: [users]
+      summary: Block a VPN user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User blocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnUser"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{id}/unblock:
+    post:
+      operationId: unblockUser
+      tags: [users]
+      summary: Unblock a VPN user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User unblocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnUser"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{id}/qr:
+    get:
+      operationId: getUserQr
+      tags: [users]
+      summary: Get user VLESS URL QR code
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: QR code data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QrResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{id}/vless-url:
+    get:
+      operationId: getUserVlessUrl
+      tags: [users]
+      summary: Get user VLESS connection URL
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: VLESS URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VlessUrlResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /profiles:
+    get:
+      operationId: listProfiles
+      tags: [profiles]
+      summary: List all VPN profiles
+      responses:
+        "200":
+          description: Profile list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VpnProfile"
+    post:
+      operationId: createProfile
+      tags: [profiles]
+      summary: Create a VPN profile manually
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProfileRequest"
+      responses:
+        "201":
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnProfile"
+  /profiles/import-url:
+    post:
+      operationId: importProfileUrl
+      tags: [profiles]
+      summary: Import profile from VLESS URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportUrlRequest"
+      responses:
+        "201":
+          description: Profile imported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnProfile"
+        "400":
+          description: Invalid URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /profiles/import-sub:
+    post:
+      operationId: importProfileSub
+      tags: [profiles]
+      summary: Import profiles from subscription URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImportSubRequest"
+      responses:
+        "200":
+          description: Profiles from subscription
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VpnProfile"
+        "400":
+          description: Invalid subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /profiles/{id}:
+    put:
+      operationId: updateProfile
+      tags: [profiles]
+      summary: Update a VPN profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnProfile"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteProfile
+      tags: [profiles]
+      summary: Delete a VPN profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Profile deleted
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /profiles/{id}/activate:
+    post:
+      operationId: activateProfile
+      tags: [profiles]
+      summary: Activate a VPN profile as outbound
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Profile activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnProfile"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /profiles/{id}/ping:
+    get:
+      operationId: pingProfile
+      tags: [profiles]
+      summary: Ping a VPN profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ping result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PingResult"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /speedtest/run:
+    post:
+      operationId: runSpeedtest
+      tags: [speedtest]
+      summary: Test all profiles
+      responses:
+        "200":
+          description: Speedtest results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SpeedtestResult"
+  /speedtest/auto-select:
+    post:
+      operationId: autoSelectProfile
+      tags: [speedtest]
+      summary: Auto-select best profile
+      responses:
+        "200":
+          description: Auto-select result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutoSelectResult"
+  /traffic/stats:
+    get:
+      operationId: getTrafficStats
+      tags: [server]
+      summary: Get traffic statistics for last 24 hours
+      responses:
+        "200":
+          description: Traffic data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrafficStats"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +512,365 @@ components:
           type: string
       required:
         - status
-
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        username:
+          type: string
+      required:
+        - token
+        - username
+    MeResponse:
+      type: object
+      properties:
+        username:
+          type: string
+      required:
+        - username
+    ServerStatus:
+      type: object
+      properties:
+        running:
+          type: boolean
+        uptime:
+          type: string
+        version:
+          type: string
+        activeOutbound:
+          type: ["string", "null"]
+        connectedClients:
+          type: integer
+        currentPing:
+          type: ["integer", "null"]
+      required:
+        - running
+        - uptime
+        - version
+        - activeOutbound
+        - connectedClients
+        - currentPing
+    ServerConfig:
+      type: object
+      properties:
+        officeIp:
+          type: string
+        officePort:
+          type: string
+        officeSni:
+          type: string
+        autoSwitch:
+          type: boolean
+        autoSwitchInterval:
+          type: integer
+        autoSwitchThreshold:
+          type: integer
+      required:
+        - officeIp
+        - officePort
+        - officeSni
+        - autoSwitch
+        - autoSwitchInterval
+        - autoSwitchThreshold
+    VpnUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        uuid:
+          type: string
+        flow:
+          type: string
+        trafficLimit:
+          type: number
+        trafficUsed:
+          type: number
+        status:
+          type: string
+        expiresAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - uuid
+        - flow
+        - trafficLimit
+        - trafficUsed
+        - status
+        - expiresAt
+        - createdAt
+    CreateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        trafficLimit:
+          type: number
+        expiresAt:
+          type: ["string", "null"]
+      required:
+        - name
+        - trafficLimit
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        trafficLimit:
+          type: number
+        expiresAt:
+          type: ["string", "null"]
+    QrResponse:
+      type: object
+      properties:
+        qrDataUrl:
+          type: string
+        vlessUrl:
+          type: string
+      required:
+        - qrDataUrl
+        - vlessUrl
+    VlessUrlResponse:
+      type: object
+      properties:
+        vlessUrl:
+          type: string
+      required:
+        - vlessUrl
+    VpnProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        protocol:
+          type: string
+        address:
+          type: string
+        port:
+          type: integer
+        uuid:
+          type: string
+        flow:
+          type: string
+        security:
+          type: string
+        sni:
+          type: string
+        publicKey:
+          type: string
+        shortId:
+          type: string
+        fingerprint:
+          type: string
+        country:
+          type: string
+        countryFlag:
+          type: string
+        isActive:
+          type: boolean
+        lastPing:
+          type: ["integer", "null"]
+        status:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - protocol
+        - address
+        - port
+        - uuid
+        - flow
+        - security
+        - sni
+        - publicKey
+        - shortId
+        - fingerprint
+        - country
+        - countryFlag
+        - isActive
+        - lastPing
+        - status
+        - createdAt
+    CreateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        protocol:
+          type: string
+        address:
+          type: string
+        port:
+          type: integer
+        uuid:
+          type: string
+        flow:
+          type: string
+        security:
+          type: string
+        sni:
+          type: string
+        publicKey:
+          type: string
+        shortId:
+          type: string
+        fingerprint:
+          type: string
+        country:
+          type: string
+        countryFlag:
+          type: string
+      required:
+        - name
+        - protocol
+        - address
+        - port
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        protocol:
+          type: string
+        address:
+          type: string
+        port:
+          type: integer
+        uuid:
+          type: string
+        flow:
+          type: string
+        security:
+          type: string
+        sni:
+          type: string
+        publicKey:
+          type: string
+        shortId:
+          type: string
+        fingerprint:
+          type: string
+        country:
+          type: string
+        countryFlag:
+          type: string
+    ImportUrlRequest:
+      type: object
+      properties:
+        url:
+          type: string
+      required:
+        - url
+    ImportSubRequest:
+      type: object
+      properties:
+        subscriptionUrl:
+          type: string
+      required:
+        - subscriptionUrl
+    PingResult:
+      type: object
+      properties:
+        profileId:
+          type: integer
+        ping:
+          type: ["integer", "null"]
+        status:
+          type: string
+      required:
+        - profileId
+        - ping
+        - status
+    SpeedtestResult:
+      type: object
+      properties:
+        profileId:
+          type: integer
+        profileName:
+          type: string
+        ping:
+          type: ["integer", "null"]
+        status:
+          type: string
+      required:
+        - profileId
+        - profileName
+        - ping
+        - status
+    AutoSelectResult:
+      type: object
+      properties:
+        selectedProfileId:
+          type: integer
+        selectedProfileName:
+          type: string
+        ping:
+          type: integer
+        message:
+          type: string
+      required:
+        - selectedProfileId
+        - selectedProfileName
+        - ping
+        - message
+    TrafficStats:
+      type: object
+      properties:
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrafficPoint"
+        totalIn:
+          type: number
+        totalOut:
+          type: number
+      required:
+        - points
+        - totalIn
+        - totalOut
+    TrafficPoint:
+      type: object
+      properties:
+        time:
+          type: string
+        inbound:
+          type: number
+        outbound:
+          type: number
+      required:
+        - time
+        - inbound
+        - outbound

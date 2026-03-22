@@ -1,0 +1,15 @@
+packages:
+  "recharts": "For rendering traffic charts on the dashboard"
+  "framer-motion": "For cyberpunk-style smooth UI animations and page transitions"
+  "html5-qrcode": "For scanning QR codes to import VPN profiles"
+  "date-fns": "For formatting dates and expiry times"
+  "lucide-react": "For UI icons across the application"
+  "clsx": "For merging conditional Tailwind classes"
+  "tailwind-merge": "For resolving Tailwind class conflicts"
+images:
+  - path: "artifacts/vpn-panel/public/images/cyber-bg.png"
+    description: "Dark cyberpunk grid background with subtle neon teal and purple light leaks, minimal abstract technical feeling"
+    aspect_ratio: "16:9"
+notes:
+  - "The app relies on @workspace/api-client-react for all API hooks."
+  - "Authentication is JWT based, passed via RequestInit headers to the generated hooks."
