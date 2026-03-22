@@ -1,12 +1,13 @@
-import type { VpnUser } from "@workspace/db/schema";
+import type { VpnUser, VpnProfile } from "@workspace/db/schema";
 import { getRealityPrivateKey, getRealityShortId } from "./reality-keys";
+import { buildStreamSettings, buildFragmentOutbound } from "./xray-config";
 
 const LISTEN_PORT = parseInt(process.env.XRAY_LISTEN_PORT || "443", 10);
 const XRAY_STATS_PORT = 10085;
 const REALITY_DEST = process.env.REALITY_DEST || "www.microsoft.com:443";
 const REALITY_SERVER_NAMES = (process.env.REALITY_SERVER_NAMES || "www.microsoft.com,microsoft.com").split(",").map(s => s.trim());
 
-export function buildServerXrayConfig(users: VpnUser[]) {
+export function buildServerXrayConfig(users: VpnUser[], activeProfile?: VpnProfile | null) {
   const activeUsers = users.filter(u => u.status === "active");
 
   const clients = activeUsers.map(user => ({
@@ -26,6 +27,81 @@ export function buildServerXrayConfig(users: VpnUser[]) {
 
   const [destHost, destPortStr] = REALITY_DEST.split(":");
   const destPort = parseInt(destPortStr || "443", 10);
+
+  const outbounds: Record<string, unknown>[] = [];
+  let defaultOutboundTag = "direct";
+
+  if (activeProfile) {
+    const streamSettings = buildStreamSettings(activeProfile);
+
+    const proxyOutbound: Record<string, unknown> = {
+      tag: "proxy",
+      protocol: activeProfile.protocol || "vless",
+      settings: {
+        vnext: [
+          {
+            address: activeProfile.address,
+            port: activeProfile.port,
+            users: [
+              {
+                id: activeProfile.uuid || "",
+                flow: activeProfile.flow || "",
+                encryption: "none",
+              },
+            ],
+          },
+        ],
+      },
+      streamSettings,
+    };
+
+    const fragmentOutbound = buildFragmentOutbound(activeProfile);
+    if (fragmentOutbound) {
+      proxyOutbound.proxySettings = { tag: "fragment" };
+    }
+
+    outbounds.push(proxyOutbound);
+    if (fragmentOutbound) {
+      outbounds.push(fragmentOutbound);
+    }
+
+    defaultOutboundTag = "proxy";
+  }
+
+  outbounds.push({
+    tag: "direct",
+    protocol: "freedom",
+    settings: {},
+  });
+
+  outbounds.push({
+    tag: "block",
+    protocol: "blackhole",
+    settings: {
+      response: { type: "http" },
+    },
+  });
+
+  const rules: Record<string, unknown>[] = [
+    {
+      type: "field",
+      inboundTag: ["api-in"],
+      outboundTag: "api",
+    },
+    {
+      type: "field",
+      outboundTag: "block",
+      domain: ["geosite:category-ads-all"],
+    },
+  ];
+
+  if (activeProfile) {
+    rules.push({
+      type: "field",
+      inboundTag: ["vless-reality-in"],
+      outboundTag: "proxy",
+    });
+  }
 
   return {
     log: {
@@ -87,34 +163,10 @@ export function buildServerXrayConfig(users: VpnUser[]) {
         },
       },
     ],
-    outbounds: [
-      {
-        tag: "direct",
-        protocol: "freedom",
-        settings: {},
-      },
-      {
-        tag: "block",
-        protocol: "blackhole",
-        settings: {
-          response: { type: "http" },
-        },
-      },
-    ],
+    outbounds,
     routing: {
       domainStrategy: "IPIfNonMatch",
-      rules: [
-        {
-          type: "field",
-          inboundTag: ["api-in"],
-          outboundTag: "api",
-        },
-        {
-          type: "field",
-          outboundTag: "block",
-          domain: ["geosite:category-ads-all"],
-        },
-      ],
+      rules,
     },
   };
 }

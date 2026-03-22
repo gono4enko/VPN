@@ -298,6 +298,9 @@ router.post("/profiles/:id/activate", async (req, res): Promise<void> => {
     return;
   }
 
+  const { reloadConfig } = await import("../services/xray-manager");
+  reloadConfig().catch(() => {});
+
   res.json(ActivateProfileResponse.parse(formatProfile(profile)));
 });
 

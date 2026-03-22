@@ -2,7 +2,8 @@ import { spawn, execSync, type ChildProcess } from "child_process";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-import { db, vpnUsersTable } from "@workspace/db";
+import { db, vpnUsersTable, vpnProfilesTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { buildServerXrayConfig } from "../lib/xray-server-config";
 import { logger } from "../lib/logger";
 import { trafficSnapshotsTable } from "@workspace/db/schema";
@@ -67,8 +68,16 @@ export async function startXray(): Promise<{ success: boolean; message: string }
   }
 
   const users = await db.select().from(vpnUsersTable);
-  const config = buildServerXrayConfig(users);
+  const profiles = await db.select().from(vpnProfilesTable).where(eq(vpnProfilesTable.isActive, true));
+  const activeProfile = profiles.length > 0 ? profiles[0] : null;
+  const config = buildServerXrayConfig(users, activeProfile);
   await writeXrayConfig(config);
+
+  if (activeProfile) {
+    logger.info({ profile: activeProfile.name, address: activeProfile.address }, "Routing traffic through outbound profile");
+  } else {
+    logger.info("No outbound profile — traffic exits directly");
+  }
 
   return new Promise((resolve) => {
     let resolved = false;
@@ -169,7 +178,9 @@ export async function restartXray(): Promise<{ success: boolean; message: string
 
 export async function reloadConfig(): Promise<{ success: boolean; message: string }> {
   const users = await db.select().from(vpnUsersTable);
-  const config = buildServerXrayConfig(users);
+  const profiles = await db.select().from(vpnProfilesTable).where(eq(vpnProfilesTable.isActive, true));
+  const activeProfile = profiles.length > 0 ? profiles[0] : null;
+  const config = buildServerXrayConfig(users, activeProfile);
   await writeXrayConfig(config);
 
   if (processRunning && xrayProcess) {
