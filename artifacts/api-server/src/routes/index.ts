@@ -8,6 +8,7 @@ import speedtestRouter from "./speedtest";
 import clusterRouter from "./cluster";
 import monitoringRouter from "./monitoring";
 import routingRouter from "./routing";
+import antiDpiRouter from "./anti-dpi";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use(speedtestRouter);
 router.use(clusterRouter);
 router.use(monitoringRouter);
 router.use(routingRouter);
+router.use(antiDpiRouter);
 
 export default router;

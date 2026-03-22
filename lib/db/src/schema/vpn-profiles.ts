@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, boolean, real } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, real, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -23,6 +23,17 @@ export const vpnProfilesTable = pgTable("vpn_profiles", {
   lastCheckAt: timestamp("last_check_at", { withTimezone: true }),
   isOnline: boolean("is_online").notNull().default(true),
   status: text("status").notNull().default("inactive"),
+  transportType: text("transport_type").notNull().default("tcp"),
+  transportPath: text("transport_path").notNull().default(""),
+  transportHost: text("transport_host").notNull().default(""),
+  fragmentEnabled: boolean("fragment_enabled").notNull().default(true),
+  fragmentLength: text("fragment_length").notNull().default("100-200"),
+  fragmentInterval: text("fragment_interval").notNull().default("10-20"),
+  fingerprintRotation: boolean("fingerprint_rotation").notNull().default(true),
+  fingerprintInterval: integer("fingerprint_interval").notNull().default(360),
+  fingerprintList: jsonb("fingerprint_list").notNull().$type<string[]>().default(["chrome", "firefox", "safari", "edge", "random"]),
+  lastFingerprintRotation: timestamp("last_fingerprint_rotation", { withTimezone: true }),
+  transportPriority: jsonb("transport_priority").notNull().$type<string[]>().default(["tcp", "ws", "grpc", "h2"]),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

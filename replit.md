@@ -156,11 +156,32 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - `POST /api/monitoring/stop` — stop background monitoring
 - `POST /api/monitoring/check-now` — run immediate check on all profiles
 - `GET /api/monitoring/events` — list auto-switch event log
+- `GET /api/anti-dpi/settings` — get global Anti-DPI settings (requires auth)
+- `PUT /api/anti-dpi/settings` — update Anti-DPI settings (requires auth)
+- `POST /api/anti-dpi/transport-fallback/:id` — trigger transport fallback for profile (requires auth)
+- `POST /api/anti-dpi/rotate-fingerprint/:id` — manually rotate fingerprint for profile (requires auth)
+- `GET /api/anti-dpi/xray-config/:id` — get generated Xray config for profile (requires auth)
+
+### Anti-DPI / Traffic Obfuscation
+
+The system includes Anti-DPI (Deep Packet Inspection) countermeasures:
+- **TLS ClientHello Fragmentation**: Configurable fragment length/interval per profile, splits TLS handshake to evade pattern matching
+- **Multi-Transport Support**: TCP, WebSocket, gRPC, HTTP/2 — each profile can use different transport types
+- **Automatic Transport Fallback**: Background monitor checks connection health every 30s; after 3 failures in 2 minutes, automatically switches to next transport in priority order
+- **uTLS Fingerprint Rotation**: Automatic cycling through Chrome/Firefox/Safari/Edge fingerprints on configurable interval (default 6 hours)
+- **Xray Config Generation**: Full Xray JSON config generation including fragment outbound, transport-specific streamSettings, and routing rules
+- **Audit Logging**: All transport switches and fingerprint rotations are logged to audit_logs table
+
+Key files:
+- `artifacts/api-server/src/lib/xray-config.ts` — Xray config builder (streamSettings, fragment outbound)
+- `artifacts/api-server/src/lib/anti-dpi-monitor.ts` — Background monitor (fingerprint rotation, transport fallback)
+- `artifacts/api-server/src/routes/anti-dpi.ts` — Anti-DPI API routes
+- `artifacts/vpn-panel/src/pages/settings.tsx` — Settings page with Anti-DPI UI section (Russian labels)
 
 ### Database Schema
 
 - `vpn_users` — id, uuid, name, status, trafficUsed, trafficLimit, expiresAt, createdAt
-- `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, lastDownloadSpeed, lastCheckAt, isOnline, isActive, createdAt
+- `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, lastDownloadSpeed, lastCheckAt, isOnline, isActive, transportType, transportPath, transportHost, fragmentEnabled, fragmentLength, fragmentInterval, fingerprintRotation, fingerprintInterval, fingerprintList, lastFingerprintRotation, transportPriority, createdAt
 - `vpn_servers` — id, name, address, port, country, countryFlag, provider, status, lastPing, cpuUsage, memUsage, bandwidthUsed, bandwidthLimit, connectedClients, maxClients, isPrimary, createdAt
 - `routing_rules` — id, ruleType (domain/ip/cidr/regexp), value, action (direct/proxy/block), description, enabled, priority, category, createdAt
 - `monitoring_settings` — id, enabled, intervalSeconds, pingThresholdMs, autoSwitch, lastCheckAt

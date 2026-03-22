@@ -111,6 +111,18 @@ export interface VpnProfile {
   lastCheckAt?: string | null;
   isOnline: boolean;
   status: string;
+  transportType: string;
+  transportPath: string;
+  transportHost: string;
+  fragmentEnabled: boolean;
+  fragmentLength: string;
+  fragmentInterval: string;
+  fingerprintRotation: boolean;
+  fingerprintInterval: number;
+  fingerprintList: string[];
+  transportPriority: string[];
+  /** @nullable */
+  lastFingerprintRotation: string | null;
   createdAt: string;
 }
 
@@ -128,6 +140,16 @@ export interface CreateProfileRequest {
   fingerprint?: string;
   country?: string;
   countryFlag?: string;
+  transportType?: string;
+  transportPath?: string;
+  transportHost?: string;
+  fragmentEnabled?: boolean;
+  fragmentLength?: string;
+  fragmentInterval?: string;
+  fingerprintRotation?: boolean;
+  fingerprintInterval?: number;
+  fingerprintList?: string[];
+  transportPriority?: string[];
 }
 
 export interface UpdateProfileRequest {
@@ -144,6 +166,16 @@ export interface UpdateProfileRequest {
   fingerprint?: string;
   country?: string;
   countryFlag?: string;
+  transportType?: string;
+  transportPath?: string;
+  transportHost?: string;
+  fragmentEnabled?: boolean;
+  fragmentLength?: string;
+  fragmentInterval?: string;
+  fingerprintRotation?: boolean;
+  fingerprintInterval?: number;
+  fingerprintList?: string[];
+  transportPriority?: string[];
 }
 
 export interface ImportUrlRequest {
@@ -374,4 +406,47 @@ export interface PresetImportResult {
 
 export interface DeleteCategoryResult {
   deleted: number;
+}
+
+export interface AntiDpiSettings {
+  fragmentEnabled: boolean;
+  fragmentLength: string;
+  fragmentInterval: string;
+  fingerprintRotation: boolean;
+  fingerprintInterval: number;
+  fingerprintList: string[];
+  transportPriority: string[];
+  autoFallback: boolean;
+}
+
+export interface UpdateAntiDpiSettingsRequest {
+  fragmentEnabled?: boolean;
+  fragmentLength?: string;
+  fragmentInterval?: string;
+  fingerprintRotation?: boolean;
+  fingerprintInterval?: number;
+  fingerprintList?: string[];
+  transportPriority?: string[];
+  autoFallback?: boolean;
+}
+
+export interface TransportFallbackResult {
+  profileId: number;
+  previousTransport: string;
+  newTransport: string;
+  message: string;
+}
+
+export interface FingerprintRotationResult {
+  profileId: number;
+  previousFingerprint: string;
+  newFingerprint: string;
+  message: string;
+}
+
+export type XrayConfigResponseConfig = { [key: string]: unknown };
+
+export interface XrayConfigResponse {
+  config: XrayConfigResponseConfig;
+  profile: string;
 }

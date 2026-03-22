@@ -215,6 +215,17 @@ export const ListProfilesResponseItem = zod.object({
   lastCheckAt: zod.string().nullish(),
   isOnline: zod.boolean(),
   status: zod.string(),
+  transportType: zod.string(),
+  transportPath: zod.string(),
+  transportHost: zod.string(),
+  fragmentEnabled: zod.boolean(),
+  fragmentLength: zod.string(),
+  fragmentInterval: zod.string(),
+  fingerprintRotation: zod.boolean(),
+  fingerprintInterval: zod.number(),
+  fingerprintList: zod.array(zod.string()),
+  transportPriority: zod.array(zod.string()),
+  lastFingerprintRotation: zod.string().nullable(),
   createdAt: zod.string(),
 });
 export const ListProfilesResponse = zod.array(ListProfilesResponseItem);
@@ -236,6 +247,16 @@ export const CreateProfileBody = zod.object({
   fingerprint: zod.string().optional(),
   country: zod.string().optional(),
   countryFlag: zod.string().optional(),
+  transportType: zod.string().optional(),
+  transportPath: zod.string().optional(),
+  transportHost: zod.string().optional(),
+  fragmentEnabled: zod.boolean().optional(),
+  fragmentLength: zod.string().optional(),
+  fragmentInterval: zod.string().optional(),
+  fingerprintRotation: zod.boolean().optional(),
+  fingerprintInterval: zod.number().optional(),
+  fingerprintList: zod.array(zod.string()).optional(),
+  transportPriority: zod.array(zod.string()).optional(),
 });
 
 /**
@@ -273,6 +294,17 @@ export const ImportProfileSubResponseItem = zod.object({
   lastCheckAt: zod.string().nullish(),
   isOnline: zod.boolean(),
   status: zod.string(),
+  transportType: zod.string(),
+  transportPath: zod.string(),
+  transportHost: zod.string(),
+  fragmentEnabled: zod.boolean(),
+  fragmentLength: zod.string(),
+  fragmentInterval: zod.string(),
+  fingerprintRotation: zod.boolean(),
+  fingerprintInterval: zod.number(),
+  fingerprintList: zod.array(zod.string()),
+  transportPriority: zod.array(zod.string()),
+  lastFingerprintRotation: zod.string().nullable(),
   createdAt: zod.string(),
 });
 export const ImportProfileSubResponse = zod.array(ImportProfileSubResponseItem);
@@ -298,6 +330,16 @@ export const UpdateProfileBody = zod.object({
   fingerprint: zod.string().optional(),
   country: zod.string().optional(),
   countryFlag: zod.string().optional(),
+  transportType: zod.string().optional(),
+  transportPath: zod.string().optional(),
+  transportHost: zod.string().optional(),
+  fragmentEnabled: zod.boolean().optional(),
+  fragmentLength: zod.string().optional(),
+  fragmentInterval: zod.string().optional(),
+  fingerprintRotation: zod.boolean().optional(),
+  fingerprintInterval: zod.number().optional(),
+  fingerprintList: zod.array(zod.string()).optional(),
+  transportPriority: zod.array(zod.string()).optional(),
 });
 
 export const UpdateProfileResponse = zod.object({
@@ -321,6 +363,17 @@ export const UpdateProfileResponse = zod.object({
   lastCheckAt: zod.string().nullish(),
   isOnline: zod.boolean(),
   status: zod.string(),
+  transportType: zod.string(),
+  transportPath: zod.string(),
+  transportHost: zod.string(),
+  fragmentEnabled: zod.boolean(),
+  fragmentLength: zod.string(),
+  fragmentInterval: zod.string(),
+  fingerprintRotation: zod.boolean(),
+  fingerprintInterval: zod.number(),
+  fingerprintList: zod.array(zod.string()),
+  transportPriority: zod.array(zod.string()),
+  lastFingerprintRotation: zod.string().nullable(),
   createdAt: zod.string(),
 });
 
@@ -359,6 +412,17 @@ export const ActivateProfileResponse = zod.object({
   lastCheckAt: zod.string().nullish(),
   isOnline: zod.boolean(),
   status: zod.string(),
+  transportType: zod.string(),
+  transportPath: zod.string(),
+  transportHost: zod.string(),
+  fragmentEnabled: zod.boolean(),
+  fragmentLength: zod.string(),
+  fragmentInterval: zod.string(),
+  fingerprintRotation: zod.boolean(),
+  fingerprintInterval: zod.number(),
+  fingerprintList: zod.array(zod.string()),
+  transportPriority: zod.array(zod.string()),
+  lastFingerprintRotation: zod.string().nullable(),
   createdAt: zod.string(),
 });
 
@@ -373,6 +437,85 @@ export const PingProfileResponse = zod.object({
   profileId: zod.number(),
   ping: zod.number().nullable(),
   status: zod.string(),
+});
+
+/**
+ * @summary Get global Anti-DPI settings
+ */
+export const GetAntiDpiSettingsResponse = zod.object({
+  fragmentEnabled: zod.boolean(),
+  fragmentLength: zod.string(),
+  fragmentInterval: zod.string(),
+  fingerprintRotation: zod.boolean(),
+  fingerprintInterval: zod.number(),
+  fingerprintList: zod.array(zod.string()),
+  transportPriority: zod.array(zod.string()),
+  autoFallback: zod.boolean(),
+});
+
+/**
+ * @summary Update global Anti-DPI settings
+ */
+export const UpdateAntiDpiSettingsBody = zod.object({
+  fragmentEnabled: zod.boolean().optional(),
+  fragmentLength: zod.string().optional(),
+  fragmentInterval: zod.string().optional(),
+  fingerprintRotation: zod.boolean().optional(),
+  fingerprintInterval: zod.number().optional(),
+  fingerprintList: zod.array(zod.string()).optional(),
+  transportPriority: zod.array(zod.string()).optional(),
+  autoFallback: zod.boolean().optional(),
+});
+
+export const UpdateAntiDpiSettingsResponse = zod.object({
+  fragmentEnabled: zod.boolean(),
+  fragmentLength: zod.string(),
+  fragmentInterval: zod.string(),
+  fingerprintRotation: zod.boolean(),
+  fingerprintInterval: zod.number(),
+  fingerprintList: zod.array(zod.string()),
+  transportPriority: zod.array(zod.string()),
+  autoFallback: zod.boolean(),
+});
+
+/**
+ * @summary Trigger transport fallback for a profile
+ */
+export const TriggerTransportFallbackParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const TriggerTransportFallbackResponse = zod.object({
+  profileId: zod.number(),
+  previousTransport: zod.string(),
+  newTransport: zod.string(),
+  message: zod.string(),
+});
+
+/**
+ * @summary Manually rotate fingerprint for a profile
+ */
+export const RotateFingerprintParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const RotateFingerprintResponse = zod.object({
+  profileId: zod.number(),
+  previousFingerprint: zod.string(),
+  newFingerprint: zod.string(),
+  message: zod.string(),
+});
+
+/**
+ * @summary Get generated Xray config for a profile
+ */
+export const GetXrayConfigParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetXrayConfigResponse = zod.object({
+  config: zod.object({}).passthrough(),
+  profile: zod.string(),
 });
 
 /**

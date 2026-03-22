@@ -483,6 +483,107 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /anti-dpi/settings:
+    get:
+      operationId: getAntiDpiSettings
+      tags: [server]
+      summary: Get global Anti-DPI settings
+      responses:
+        "200":
+          description: Anti-DPI settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AntiDpiSettings"
+    put:
+      operationId: updateAntiDpiSettings
+      tags: [server]
+      summary: Update global Anti-DPI settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAntiDpiSettingsRequest"
+      responses:
+        "200":
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AntiDpiSettings"
+  /anti-dpi/transport-fallback/{id}:
+    post:
+      operationId: triggerTransportFallback
+      tags: [server]
+      summary: Trigger transport fallback for a profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Transport switched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransportFallbackResult"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /anti-dpi/rotate-fingerprint/{id}:
+    post:
+      operationId: rotateFingerprint
+      tags: [server]
+      summary: Manually rotate fingerprint for a profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Fingerprint rotated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FingerprintRotationResult"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /anti-dpi/xray-config/{id}:
+    get:
+      operationId: getXrayConfig
+      tags: [server]
+      summary: Get generated Xray config for a profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Xray config JSON
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/XrayConfigResponse"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /speedtest/run:
     post:
       operationId: runSpeedtest
@@ -1104,6 +1205,32 @@ components:
           type: boolean
         status:
           type: string
+        transportType:
+          type: string
+        transportPath:
+          type: string
+        transportHost:
+          type: string
+        fragmentEnabled:
+          type: boolean
+        fragmentLength:
+          type: string
+        fragmentInterval:
+          type: string
+        fingerprintRotation:
+          type: boolean
+        fingerprintInterval:
+          type: integer
+        fingerprintList:
+          type: array
+          items:
+            type: string
+        transportPriority:
+          type: array
+          items:
+            type: string
+        lastFingerprintRotation:
+          type: ["string", "null"]
         createdAt:
           type: string
       required:
@@ -1125,6 +1252,17 @@ components:
         - lastPing
         - isOnline
         - status
+        - transportType
+        - transportPath
+        - transportHost
+        - fragmentEnabled
+        - fragmentLength
+        - fragmentInterval
+        - fingerprintRotation
+        - fingerprintInterval
+        - fingerprintList
+        - transportPriority
+        - lastFingerprintRotation
         - createdAt
     CreateProfileRequest:
       type: object
@@ -1155,6 +1293,30 @@ components:
           type: string
         countryFlag:
           type: string
+        transportType:
+          type: string
+        transportPath:
+          type: string
+        transportHost:
+          type: string
+        fragmentEnabled:
+          type: boolean
+        fragmentLength:
+          type: string
+        fragmentInterval:
+          type: string
+        fingerprintRotation:
+          type: boolean
+        fingerprintInterval:
+          type: integer
+        fingerprintList:
+          type: array
+          items:
+            type: string
+        transportPriority:
+          type: array
+          items:
+            type: string
       required:
         - name
         - protocol
@@ -1189,6 +1351,30 @@ components:
           type: string
         countryFlag:
           type: string
+        transportType:
+          type: string
+        transportPath:
+          type: string
+        transportHost:
+          type: string
+        fragmentEnabled:
+          type: boolean
+        fragmentLength:
+          type: string
+        fragmentInterval:
+          type: string
+        fingerprintRotation:
+          type: boolean
+        fingerprintInterval:
+          type: integer
+        fingerprintList:
+          type: array
+          items:
+            type: string
+        transportPriority:
+          type: array
+          items:
+            type: string
     ImportUrlRequest:
       type: object
       properties:
@@ -1637,3 +1823,100 @@ components:
           type: integer
       required:
         - deleted
+    AntiDpiSettings:
+      type: object
+      properties:
+        fragmentEnabled:
+          type: boolean
+        fragmentLength:
+          type: string
+        fragmentInterval:
+          type: string
+        fingerprintRotation:
+          type: boolean
+        fingerprintInterval:
+          type: integer
+        fingerprintList:
+          type: array
+          items:
+            type: string
+        transportPriority:
+          type: array
+          items:
+            type: string
+        autoFallback:
+          type: boolean
+      required:
+        - fragmentEnabled
+        - fragmentLength
+        - fragmentInterval
+        - fingerprintRotation
+        - fingerprintInterval
+        - fingerprintList
+        - transportPriority
+        - autoFallback
+    UpdateAntiDpiSettingsRequest:
+      type: object
+      properties:
+        fragmentEnabled:
+          type: boolean
+        fragmentLength:
+          type: string
+        fragmentInterval:
+          type: string
+        fingerprintRotation:
+          type: boolean
+        fingerprintInterval:
+          type: integer
+        fingerprintList:
+          type: array
+          items:
+            type: string
+        transportPriority:
+          type: array
+          items:
+            type: string
+        autoFallback:
+          type: boolean
+    TransportFallbackResult:
+      type: object
+      properties:
+        profileId:
+          type: integer
+        previousTransport:
+          type: string
+        newTransport:
+          type: string
+        message:
+          type: string
+      required:
+        - profileId
+        - previousTransport
+        - newTransport
+        - message
+    FingerprintRotationResult:
+      type: object
+      properties:
+        profileId:
+          type: integer
+        previousFingerprint:
+          type: string
+        newFingerprint:
+          type: string
+        message:
+          type: string
+      required:
+        - profileId
+        - previousFingerprint
+        - newFingerprint
+        - message
+    XrayConfigResponse:
+      type: object
+      properties:
+        config:
+          type: object
+        profile:
+          type: string
+      required:
+        - config
+        - profile

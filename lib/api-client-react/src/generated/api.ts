@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AntiDpiSettings,
   AutoSelectResult,
   ClusterStats,
   CreateProfileRequest,
@@ -24,6 +25,7 @@ import type {
   CreateUserRequest,
   DeleteCategoryResult,
   ErrorResponse,
+  FingerprintRotationResult,
   HealthStatus,
   ImportResult,
   ImportSubRequest,
@@ -49,6 +51,8 @@ import type {
   SpeedtestResult,
   SwitchEvent,
   TrafficStats,
+  TransportFallbackResult,
+  UpdateAntiDpiSettingsRequest,
   UpdateMonitoringSettingsRequest,
   UpdateProfileRequest,
   UpdateServerRequest,
@@ -57,6 +61,7 @@ import type {
   VpnProfile,
   VpnServer,
   VpnUser,
+  XrayConfigResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1934,6 +1939,426 @@ export function usePingProfile<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getPingProfileQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get global Anti-DPI settings
+ */
+export const getGetAntiDpiSettingsUrl = () => {
+  return `/api/anti-dpi/settings`;
+};
+
+export const getAntiDpiSettings = async (
+  options?: RequestInit,
+): Promise<AntiDpiSettings> => {
+  return customFetch<AntiDpiSettings>(getGetAntiDpiSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAntiDpiSettingsQueryKey = () => {
+  return [`/api/anti-dpi/settings`] as const;
+};
+
+export const getGetAntiDpiSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAntiDpiSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAntiDpiSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAntiDpiSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAntiDpiSettings>>
+  > = ({ signal }) => getAntiDpiSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAntiDpiSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAntiDpiSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAntiDpiSettings>>
+>;
+export type GetAntiDpiSettingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get global Anti-DPI settings
+ */
+
+export function useGetAntiDpiSettings<
+  TData = Awaited<ReturnType<typeof getAntiDpiSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAntiDpiSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAntiDpiSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update global Anti-DPI settings
+ */
+export const getUpdateAntiDpiSettingsUrl = () => {
+  return `/api/anti-dpi/settings`;
+};
+
+export const updateAntiDpiSettings = async (
+  updateAntiDpiSettingsRequest: UpdateAntiDpiSettingsRequest,
+  options?: RequestInit,
+): Promise<AntiDpiSettings> => {
+  return customFetch<AntiDpiSettings>(getUpdateAntiDpiSettingsUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateAntiDpiSettingsRequest),
+  });
+};
+
+export const getUpdateAntiDpiSettingsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAntiDpiSettings>>,
+    TError,
+    { data: BodyType<UpdateAntiDpiSettingsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateAntiDpiSettings>>,
+  TError,
+  { data: BodyType<UpdateAntiDpiSettingsRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateAntiDpiSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateAntiDpiSettings>>,
+    { data: BodyType<UpdateAntiDpiSettingsRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateAntiDpiSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateAntiDpiSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateAntiDpiSettings>>
+>;
+export type UpdateAntiDpiSettingsMutationBody =
+  BodyType<UpdateAntiDpiSettingsRequest>;
+export type UpdateAntiDpiSettingsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update global Anti-DPI settings
+ */
+export const useUpdateAntiDpiSettings = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateAntiDpiSettings>>,
+    TError,
+    { data: BodyType<UpdateAntiDpiSettingsRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateAntiDpiSettings>>,
+  TError,
+  { data: BodyType<UpdateAntiDpiSettingsRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateAntiDpiSettingsMutationOptions(options));
+};
+
+/**
+ * @summary Trigger transport fallback for a profile
+ */
+export const getTriggerTransportFallbackUrl = (id: number) => {
+  return `/api/anti-dpi/transport-fallback/${id}`;
+};
+
+export const triggerTransportFallback = async (
+  id: number,
+  options?: RequestInit,
+): Promise<TransportFallbackResult> => {
+  return customFetch<TransportFallbackResult>(
+    getTriggerTransportFallbackUrl(id),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getTriggerTransportFallbackMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof triggerTransportFallback>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof triggerTransportFallback>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["triggerTransportFallback"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof triggerTransportFallback>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return triggerTransportFallback(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type TriggerTransportFallbackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof triggerTransportFallback>>
+>;
+
+export type TriggerTransportFallbackMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Trigger transport fallback for a profile
+ */
+export const useTriggerTransportFallback = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof triggerTransportFallback>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof triggerTransportFallback>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getTriggerTransportFallbackMutationOptions(options));
+};
+
+/**
+ * @summary Manually rotate fingerprint for a profile
+ */
+export const getRotateFingerprintUrl = (id: number) => {
+  return `/api/anti-dpi/rotate-fingerprint/${id}`;
+};
+
+export const rotateFingerprint = async (
+  id: number,
+  options?: RequestInit,
+): Promise<FingerprintRotationResult> => {
+  return customFetch<FingerprintRotationResult>(getRotateFingerprintUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getRotateFingerprintMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rotateFingerprint>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rotateFingerprint>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["rotateFingerprint"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rotateFingerprint>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return rotateFingerprint(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RotateFingerprintMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rotateFingerprint>>
+>;
+
+export type RotateFingerprintMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Manually rotate fingerprint for a profile
+ */
+export const useRotateFingerprint = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rotateFingerprint>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof rotateFingerprint>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getRotateFingerprintMutationOptions(options));
+};
+
+/**
+ * @summary Get generated Xray config for a profile
+ */
+export const getGetXrayConfigUrl = (id: number) => {
+  return `/api/anti-dpi/xray-config/${id}`;
+};
+
+export const getXrayConfig = async (
+  id: number,
+  options?: RequestInit,
+): Promise<XrayConfigResponse> => {
+  return customFetch<XrayConfigResponse>(getGetXrayConfigUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetXrayConfigQueryKey = (id: number) => {
+  return [`/api/anti-dpi/xray-config/${id}`] as const;
+};
+
+export const getGetXrayConfigQueryOptions = <
+  TData = Awaited<ReturnType<typeof getXrayConfig>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getXrayConfig>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetXrayConfigQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getXrayConfig>>> = ({
+    signal,
+  }) => getXrayConfig(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getXrayConfig>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetXrayConfigQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getXrayConfig>>
+>;
+export type GetXrayConfigQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get generated Xray config for a profile
+ */
+
+export function useGetXrayConfig<
+  TData = Awaited<ReturnType<typeof getXrayConfig>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getXrayConfig>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetXrayConfigQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

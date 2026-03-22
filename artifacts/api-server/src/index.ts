@@ -1,5 +1,8 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { startMonitor } from "./lib/anti-dpi-monitor";
+
+startMonitor();
 
 const rawPort = process.env["PORT"];
 

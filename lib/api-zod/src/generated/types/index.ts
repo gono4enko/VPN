@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./antiDpiSettings";
 export * from "./autoSelectResult";
 export * from "./clusterStats";
 export * from "./createProfileRequest";
@@ -13,6 +14,7 @@ export * from "./createServerRequest";
 export * from "./createUserRequest";
 export * from "./deleteCategoryResult";
 export * from "./errorResponse";
+export * from "./fingerprintRotationResult";
 export * from "./healthStatus";
 export * from "./importResult";
 export * from "./importSubRequest";
@@ -42,6 +44,8 @@ export * from "./speedtestResult";
 export * from "./switchEvent";
 export * from "./trafficPoint";
 export * from "./trafficStats";
+export * from "./transportFallbackResult";
+export * from "./updateAntiDpiSettingsRequest";
 export * from "./updateMonitoringSettingsRequest";
 export * from "./updateProfileRequest";
 export * from "./updateServerRequest";
@@ -51,3 +55,5 @@ export * from "./vpnProfile";
 export * from "./vpnServer";
 export * from "./vpnServerStatus";
 export * from "./vpnUser";
+export * from "./xrayConfigResponse";
+export * from "./xrayConfigResponseConfig";

@@ -20,4 +20,14 @@ export interface CreateProfileRequest {
   fingerprint?: string;
   country?: string;
   countryFlag?: string;
+  transportType?: string;
+  transportPath?: string;
+  transportHost?: string;
+  fragmentEnabled?: boolean;
+  fragmentLength?: string;
+  fragmentInterval?: string;
+  fingerprintRotation?: boolean;
+  fingerprintInterval?: number;
+  fingerprintList?: string[];
+  transportPriority?: string[];
 }

@@ -42,17 +42,30 @@ function formatProfile(profile: VpnProfile) {
     lastCheckAt: profile.lastCheckAt?.toISOString() ?? null,
     isOnline: profile.isOnline,
     status: profile.status,
+    transportType: profile.transportType || "tcp",
+    transportPath: profile.transportPath || "",
+    transportHost: profile.transportHost || "",
+    fragmentEnabled: profile.fragmentEnabled ?? true,
+    fragmentLength: profile.fragmentLength || "100-200",
+    fragmentInterval: profile.fragmentInterval || "10-20",
+    fingerprintRotation: profile.fingerprintRotation ?? true,
+    fingerprintInterval: profile.fingerprintInterval || 360,
+    fingerprintList: (profile.fingerprintList as string[]) || ["chrome", "firefox", "safari", "edge", "random"],
+    transportPriority: (profile.transportPriority as string[]) || ["tcp", "ws", "grpc", "h2"],
+    lastFingerprintRotation: profile.lastFingerprintRotation ? profile.lastFingerprintRotation.toISOString() : null,
     createdAt: profile.createdAt.toISOString(),
   };
 }
 
 function parseVlessUrl(url: string) {
-  const match = url.match(/^vless:\/\/([^@]+)@([^:]+):(\d+)\??(.*)#?(.*)$/);
+  const match = url.match(/^vless:\/\/([^@]+)@([^:]+):(\d+)\??([^#]*)(?:#(.*))?$/);
   if (!match) return null;
 
   const [, uuid, address, port, paramsStr, fragment] = match;
   const params = new URLSearchParams(paramsStr);
   const name = decodeURIComponent(fragment || address);
+
+  const typeParam = params.get("type") || "tcp";
 
   return {
     uuid,
@@ -65,6 +78,9 @@ function parseVlessUrl(url: string) {
     publicKey: params.get("pbk") || "",
     shortId: params.get("sid") || "",
     fingerprint: params.get("fp") || "random",
+    transportType: typeParam,
+    transportPath: params.get("path") || params.get("serviceName") || "",
+    transportHost: params.get("host") || "",
   };
 }
 
@@ -94,6 +110,16 @@ router.post("/profiles", async (req, res): Promise<void> => {
     fingerprint: parsed.data.fingerprint || "random",
     country: parsed.data.country || "Unknown",
     countryFlag: parsed.data.countryFlag || "🌐",
+    transportType: parsed.data.transportType || "tcp",
+    transportPath: parsed.data.transportPath || "",
+    transportHost: parsed.data.transportHost || "",
+    fragmentEnabled: parsed.data.fragmentEnabled ?? true,
+    fragmentLength: parsed.data.fragmentLength || "100-200",
+    fragmentInterval: parsed.data.fragmentInterval || "10-20",
+    fingerprintRotation: parsed.data.fingerprintRotation ?? true,
+    fingerprintInterval: parsed.data.fingerprintInterval || 360,
+    fingerprintList: parsed.data.fingerprintList || ["chrome", "firefox", "safari", "edge", "random"],
+    transportPriority: parsed.data.transportPriority || ["tcp", "ws", "grpc", "h2"],
   }).returning();
 
   res.status(201).json(formatProfile(profile));
@@ -124,6 +150,9 @@ router.post("/profiles/import-url", async (req, res): Promise<void> => {
     publicKey: profileData.publicKey,
     shortId: profileData.shortId,
     fingerprint: profileData.fingerprint,
+    transportType: profileData.transportType,
+    transportPath: profileData.transportPath,
+    transportHost: profileData.transportHost,
   }).returning();
 
   res.status(201).json(formatProfile(profile));
@@ -195,6 +224,9 @@ router.post("/profiles/import-sub", async (req, res): Promise<void> => {
           publicKey: profileData.publicKey,
           shortId: profileData.shortId,
           fingerprint: profileData.fingerprint,
+          transportType: profileData.transportType,
+          transportPath: profileData.transportPath,
+          transportHost: profileData.transportHost,
         }).returning();
         profiles.push(formatProfile(profile));
       }

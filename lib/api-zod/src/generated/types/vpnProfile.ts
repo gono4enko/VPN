@@ -30,5 +30,17 @@ export interface VpnProfile {
   lastCheckAt?: string | null;
   isOnline: boolean;
   status: string;
+  transportType: string;
+  transportPath: string;
+  transportHost: string;
+  fragmentEnabled: boolean;
+  fragmentLength: string;
+  fragmentInterval: string;
+  fingerprintRotation: boolean;
+  fingerprintInterval: number;
+  fingerprintList: string[];
+  transportPriority: string[];
+  /** @nullable */
+  lastFingerprintRotation: string | null;
   createdAt: string;
 }
