@@ -17,7 +17,7 @@ import {
   getGetMonitoringStatusQueryKey,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { CyberCard, CyberButton, CyberBadge } from '@/components/ui/cyber';
+import { CyberCard, CyberButton, CyberBadge, CyberInput } from '@/components/ui/cyber';
 import { CyberTooltip } from '@/components/ui/tooltip';
 import { Activity, Zap, Users, Shield, RefreshCw, Server, Wifi, Radio, Eye, EyeOff, Play, Square, Clock, ArrowRightLeft, Globe, Link, HardDrive } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -35,8 +35,14 @@ export default function Dashboard() {
   
   const autoSelectMutation = useAutoSelectProfile();
   const restartMutation = useRestartServer();
+  const startMonMutation = useStartMonitoring();
+  const stopMonMutation = useStopMonitoring();
+  const checkNowMutation = useCheckNow();
+  const updateMonMutation = useUpdateMonitoringSettings();
 
   const [clientIp, setClientIp] = useState<string | null>(null);
+  const [editInterval, setEditInterval] = useState<number | null>(null);
+  const [editThreshold, setEditThreshold] = useState<number | null>(null);
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}api/server/client-ip`.replace(/\/+/g, '/').replace(':/', '://'))
@@ -57,6 +63,37 @@ export default function Dashboard() {
   const handleRestart = async () => {
     await restartMutation.mutateAsync();
     queryClient.invalidateQueries({ queryKey: getGetServerStatusQueryKey() });
+  };
+
+  const handleToggleMonitoring = async () => {
+    if (monitoringStatus?.isRunning) {
+      await stopMonMutation.mutateAsync();
+    } else {
+      await startMonMutation.mutateAsync();
+    }
+    queryClient.invalidateQueries({ queryKey: getGetMonitoringStatusQueryKey() });
+  };
+
+  const handleCheckNow = async () => {
+    await checkNowMutation.mutateAsync();
+    queryClient.invalidateQueries({ queryKey: getGetMonitoringStatusQueryKey() });
+  };
+
+  const handleToggleAutoSwitch = async () => {
+    await updateMonMutation.mutateAsync({
+      data: { autoSwitchEnabled: !monitoring?.autoSwitchEnabled },
+    });
+  };
+
+  const handleSaveMonSettings = async () => {
+    await updateMonMutation.mutateAsync({
+      data: {
+        ...(editInterval !== null ? { intervalSeconds: editInterval } : {}),
+        ...(editThreshold !== null ? { pingThresholdMs: editThreshold } : {}),
+      },
+    });
+    setEditInterval(null);
+    setEditThreshold(null);
   };
 
   const chartData = traffic?.points.map(p => ({
@@ -228,21 +265,21 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="font-mono text-sm text-muted-foreground">Статус</span>
-              <CyberBadge variant={monitoring?.isRunning ? 'green' : 'red'}>
-                {monitoring?.isRunning ? 'Работает' : 'Остановлен'}
+              <CyberBadge variant={monitoringStatus?.isRunning ? 'green' : 'red'}>
+                {monitoringStatus?.isRunning ? 'Работает' : 'Остановлен'}
               </CyberBadge>
             </div>
 
             <div className="flex gap-2">
               <CyberButton
                 size="sm"
-                variant={monitoring?.isRunning ? 'destructive' : 'default'}
+                variant={monitoringStatus?.isRunning ? 'destructive' : 'default'}
                 onClick={handleToggleMonitoring}
                 className="flex-1"
                 disabled={startMonMutation.isPending || stopMonMutation.isPending}
               >
-                {monitoring?.isRunning ? <Square className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
-                {monitoring?.isRunning ? 'Стоп' : 'Старт'}
+                {monitoringStatus?.isRunning ? <Square className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
+                {monitoringStatus?.isRunning ? 'Стоп' : 'Старт'}
               </CyberButton>
               <CyberTooltip text="Запустить проверку всех узлов прямо сейчас">
                 <CyberButton size="sm" variant="outline" onClick={handleCheckNow} disabled={checkNowMutation.isPending}>
@@ -254,7 +291,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <span className="font-mono text-sm text-muted-foreground">Авто-переключение</span>
               <CyberButton size="sm" variant="outline" onClick={handleToggleAutoSwitch}>
-                {monitoring?.autoSwitch ? <Eye className="w-4 h-4 text-green-400" /> : <EyeOff className="w-4 h-4 text-red-400" />}
+                {monitoring?.autoSwitchEnabled ? <Eye className="w-4 h-4 text-green-400" /> : <EyeOff className="w-4 h-4 text-red-400" />}
               </CyberButton>
             </div>
 
@@ -282,16 +319,16 @@ export default function Dashboard() {
                 </div>
               </div>
               {(editInterval !== null || editThreshold !== null) && (
-                <CyberButton size="sm" className="w-full" onClick={handleSaveSettings} disabled={updateSettingsMutation.isPending}>
+                <CyberButton size="sm" className="w-full" onClick={handleSaveMonSettings} disabled={updateMonMutation.isPending}>
                   Сохранить
                 </CyberButton>
               )}
             </div>
 
-            {monitoring?.lastCheckAt && (
+            {monitoringStatus?.lastCheckAt && (
               <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
                 <Clock className="w-3 h-3" />
-                Последняя: {format(new Date(monitoring.lastCheckAt), 'HH:mm:ss')}
+                Последняя: {format(new Date(monitoringStatus.lastCheckAt), 'HH:mm:ss')}
               </div>
             )}
           </div>
@@ -321,8 +358,6 @@ export default function Dashboard() {
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{event.reason}</p>
                     <div className="flex gap-4 text-xs text-muted-foreground/70 mt-1">
-                      {event.pingBefore !== null && event.pingBefore !== undefined && <span>Было: {event.pingBefore}мс</span>}
-                      {event.pingAfter !== null && event.pingAfter !== undefined && <span>Стало: {event.pingAfter}мс</span>}
                       <span>{format(new Date(event.createdAt), 'dd.MM HH:mm:ss')}</span>
                     </div>
                   </div>

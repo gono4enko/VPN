@@ -7,6 +7,7 @@ import {
   startMonitoring,
   stopMonitoring as stopMonitoringService,
   getSwitchEvents,
+  runCheckNow,
 } from "../services/monitoring";
 
 const router: IRouter = Router();
@@ -71,6 +72,11 @@ router.post("/monitoring/start", authMiddleware, async (_req, res): Promise<void
 router.post("/monitoring/stop", authMiddleware, async (_req, res): Promise<void> => {
   await stopMonitoringService();
   res.json({ message: "Monitoring stopped" });
+});
+
+router.post("/monitoring/check-now", authMiddleware, async (_req, res): Promise<void> => {
+  await runCheckNow();
+  res.json({ message: "Check completed" });
 });
 
 router.get("/monitoring/events", authMiddleware, async (_req, res): Promise<void> => {

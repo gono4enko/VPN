@@ -467,6 +467,23 @@ router.post("/cluster/sync/pull", async (req, res): Promise<void> => {
   }));
 });
 
+router.post("/cluster/sync/trigger", async (_req, res): Promise<void> => {
+  const nodes = await db.select().from(clusterNodesTable);
+  let synced = 0;
+  let errors = 0;
+
+  for (const node of nodes) {
+    try {
+      await triggerSyncForNode(node.id);
+      synced++;
+    } catch {
+      errors++;
+    }
+  }
+
+  res.json({ status: "ok", synced, errors });
+});
+
 router.get("/cluster/config", async (_req, res): Promise<void> => {
   const config = getClusterConfigState();
   res.json(GetClusterConfigResponse.parse(config));

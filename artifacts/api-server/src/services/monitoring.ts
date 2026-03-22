@@ -181,6 +181,10 @@ export async function initMonitoringOnBoot() {
   }
 }
 
+export async function runCheckNow() {
+  await runCheck();
+}
+
 export async function getSwitchEvents(limit = 50) {
   const events = await db
     .select()
