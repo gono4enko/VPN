@@ -1,5 +1,5 @@
-import path from "node:path";
 import express, { type Express } from "express";
+import path from "node:path";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
@@ -34,10 +34,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
 
 if (process.env.NODE_ENV === "production") {
-  const clientDir = path.resolve(__dirname, "public");
-  app.use(express.static(clientDir));
-  app.get("/{*splat}", (_req, res) => {
-    res.sendFile(path.join(clientDir, "index.html"));
+  const staticDir = process.env.STATIC_DIR
+    ? path.resolve(process.env.STATIC_DIR)
+    : path.resolve(__dirname, "public");
+  logger.info({ staticDir }, "Serving static files in production mode");
+  app.use(express.static(staticDir));
+  app.get(/^(?!\/api\/).*/, (_req, res) => {
+    res.sendFile(path.join(staticDir, "index.html"));
   });
 }
 

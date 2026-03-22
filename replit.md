@@ -235,3 +235,15 @@ The `deploy/` directory contains everything needed for self-hosted deployment on
 - `deploy/README.md` — step-by-step deployment guide in Russian
 
 In production mode, the Express API server serves the Vite-built frontend static files from `dist/public/` and handles SPA routing via a catch-all route.
+
+### Release Distribution
+
+The project includes a release build system for distributing the VPN Control Panel as a standalone archive:
+
+- `pnpm run release` — builds a distributable `vpn-panel-<version>-<os>-<arch>.tar.gz` in `release/`
+- `install.sh` — one-line installer: `curl -fsSL https://raw.githubusercontent.com/<user>/<repo>/main/install.sh | bash`
+- `scripts/build-release.sh` — release build script (builds frontend + API server, packages with runtime deps)
+- `scripts/release-assets/` — management scripts included in release (start.sh, stop.sh, status.sh, uninstall.sh)
+- `.env.example` — environment variable template
+- `INSTALL.md` — installation guide in Russian
+- In production mode (`NODE_ENV=production` + `STATIC_DIR` env var), the API server serves the built frontend via `express.static`, so everything runs on a single port
