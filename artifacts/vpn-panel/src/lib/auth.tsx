@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { setAuthTokenGetter } from '@workspace/api-client-react';
+import React, { createContext, useContext, ReactNode } from 'react';
 
 interface AuthContextType {
   token: string | null;
@@ -10,25 +9,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-let _currentToken: string | null = null;
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('vpn_token'));
+  const token = "no-auth";
 
-  useEffect(() => {
-    _currentToken = token;
-    setAuthTokenGetter(() => _currentToken);
-  }, [token]);
+  const login = (_newToken: string) => {};
 
-  const login = (newToken: string) => {
-    localStorage.setItem('vpn_token', newToken);
-    setToken(newToken);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('vpn_token');
-    setToken(null);
-  };
+  const logout = () => {};
 
   const authOpts = {};
 
