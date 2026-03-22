@@ -33,8 +33,12 @@ export default function Dashboard() {
   }, []);
 
   const handleAutoSelect = async () => {
-    await autoSelectMutation.mutateAsync();
-    queryClient.invalidateQueries({ queryKey: getGetServerStatusQueryKey() });
+    try {
+      await autoSelectMutation.mutateAsync();
+      queryClient.invalidateQueries({ queryKey: getGetServerStatusQueryKey() });
+    } catch {
+      alert('Нет доступных профилей. Сначала добавьте профиль на странице "Профили".');
+    }
   };
 
   const handleRestart = async () => {
