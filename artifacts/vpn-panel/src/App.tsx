@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard";
 import UsersPage from "@/pages/users";
 import ProfilesPage from "@/pages/profiles";
+import ClusterPage from "@/pages/cluster";
 import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
@@ -16,6 +17,7 @@ function Router() {
     <Switch>
       <Route path="/users" component={UsersPage} />
       <Route path="/profiles" component={ProfilesPage} />
+      <Route path="/cluster" component={ClusterPage} />
       <Route path="/settings" component={SettingsPage} />
       <Route path="/" component={Dashboard} />
       <Route component={NotFound} />

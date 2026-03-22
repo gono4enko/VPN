@@ -5,6 +5,7 @@ import usersRouter from "./users";
 import profilesRouter from "./profiles";
 import serverRouter from "./server";
 import speedtestRouter from "./speedtest";
+import clusterRouter from "./cluster";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(usersRouter);
 router.use(profilesRouter);
 router.use(serverRouter);
 router.use(speedtestRouter);
+router.use(clusterRouter);
 
 export default router;

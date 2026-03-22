@@ -95,8 +95,8 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 
 React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on dark navy). Uses wouter v3 for routing, TanStack React Query via generated hooks from `@workspace/api-client-react`.
 
-- Routes: `/login`, `/` (dashboard), `/users`, `/profiles`, `/settings`
-- Auth: JWT stored in localStorage (`vpn_token`), `AuthProvider` context in `src/lib/auth.tsx` sets `setAuthTokenGetter` for auto-attaching bearer tokens
+- Routes: `/` (dashboard), `/users`, `/profiles`, `/cluster`, `/settings`
+- Auth: Removed — all routes are publicly accessible (no login required)
 - Custom UI components: `src/components/ui/cyber.tsx` (CyberCard, CyberButton, CyberBadge, Modal, CyberInput)
 - Tooltips: `src/components/ui/tooltip.tsx` — CyberTooltip component wrapping Radix UI tooltips with cyberpunk styling, TooltipProvider in App.tsx
 - Layout: `src/components/layout.tsx` — sidebar with XRAY branding and nav links
@@ -130,13 +130,21 @@ React + Vite frontend for VPN Control Panel. Dark cyberpunk theme (teal neon on 
 - `GET /api/profiles/:id/ping` — ping profile (requires auth)
 - `DELETE /api/profiles/:id` — delete profile (requires auth)
 - `POST /api/profiles/auto-select` — auto-select fastest profile (requires auth)
-- `GET /api/traffic/stats` — traffic statistics (requires auth)
-- `GET /api/speedtest` — speed test (requires auth)
+- `GET /api/traffic/stats` — traffic statistics
+- `GET /api/speedtest` — speed test
+- `GET /api/cluster/servers` — list cluster servers
+- `POST /api/cluster/servers` — add server to cluster
+- `PUT /api/cluster/servers/:id` — update server
+- `DELETE /api/cluster/servers/:id` — delete server
+- `GET /api/cluster/servers/:id/ping` — ping server
+- `POST /api/cluster/servers/:id/set-primary` — set primary server
+- `GET /api/cluster/stats` — cluster statistics
 
 ### Database Schema
 
 - `vpn_users` — id, uuid, name, status, trafficUsed, trafficLimit, expiresAt, createdAt
 - `vpn_profiles` — id, name, protocol, address, port, settings, countryFlag, lastPing, isActive, createdAt
+- `vpn_servers` — id, name, address, port, country, countryFlag, provider, status, lastPing, cpuUsage, memUsage, bandwidthUsed, bandwidthLimit, connectedClients, maxClients, isPrimary, createdAt
 - `audit_logs` — id, action, details, timestamp
 
 ### Required Environment

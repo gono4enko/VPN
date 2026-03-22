@@ -182,3 +182,62 @@ export interface TrafficStats {
   totalIn: number;
   totalOut: number;
 }
+
+export type VpnServerStatus =
+  (typeof VpnServerStatus)[keyof typeof VpnServerStatus];
+
+export const VpnServerStatus = {
+  online: "online",
+  offline: "offline",
+  maintenance: "maintenance",
+} as const;
+
+export interface VpnServer {
+  id: number;
+  name: string;
+  address: string;
+  port: number;
+  country: string;
+  countryFlag: string;
+  provider: string;
+  status: VpnServerStatus;
+  lastPing?: number | null;
+  cpuUsage?: number | null;
+  memUsage?: number | null;
+  bandwidthUsed: number;
+  bandwidthLimit: number;
+  connectedClients: number;
+  maxClients: number;
+  isPrimary: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateServerRequest {
+  name: string;
+  address: string;
+  port?: number;
+  country?: string;
+  countryFlag?: string;
+  provider?: string;
+  maxClients?: number;
+}
+
+export interface UpdateServerRequest {
+  name?: string;
+  address?: string;
+  port?: number;
+  country?: string;
+  countryFlag?: string;
+  provider?: string;
+  maxClients?: number;
+  status?: string;
+}
+
+export interface ClusterStats {
+  totalServers: number;
+  onlineServers: number;
+  totalClients: number;
+  avgPing?: number | null;
+  totalBandwidth: number;
+}

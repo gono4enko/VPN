@@ -19,6 +19,8 @@ tags:
     description: Xray server management
   - name: speedtest
     description: Speed testing
+  - name: cluster
+    description: Server cluster management
 paths:
   /healthz:
     get:
@@ -515,6 +517,122 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TrafficStats"
+  /cluster/servers:
+    get:
+      operationId: listServers
+      tags: [cluster]
+      summary: List all servers in cluster
+      responses:
+        "200":
+          description: Server list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VpnServer"
+    post:
+      operationId: createServer
+      tags: [cluster]
+      summary: Add server to cluster
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServerRequest"
+      responses:
+        "201":
+          description: Server created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnServer"
+  /cluster/servers/{id}:
+    put:
+      operationId: updateServer
+      tags: [cluster]
+      summary: Update server details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServerRequest"
+      responses:
+        "200":
+          description: Server updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnServer"
+    delete:
+      operationId: deleteServer
+      tags: [cluster]
+      summary: Remove server from cluster
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Server deleted
+  /cluster/servers/{id}/ping:
+    get:
+      operationId: pingServer
+      tags: [cluster]
+      summary: Ping a server
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ping result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnServer"
+  /cluster/servers/{id}/set-primary:
+    post:
+      operationId: setPrimaryServer
+      tags: [cluster]
+      summary: Set server as primary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Primary set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VpnServer"
+  /cluster/stats:
+    get:
+      operationId: getClusterStats
+      tags: [cluster]
+      summary: Get cluster statistics
+      responses:
+        "200":
+          description: Cluster stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClusterStats"
 components:
   schemas:
     HealthStatus:
@@ -886,3 +1004,122 @@ components:
         - time
         - inbound
         - outbound
+    VpnServer:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        port:
+          type: integer
+        country:
+          type: string
+        countryFlag:
+          type: string
+        provider:
+          type: string
+        status:
+          type: string
+          enum: [online, offline, maintenance]
+        lastPing:
+          type: integer
+          nullable: true
+        cpuUsage:
+          type: number
+          nullable: true
+        memUsage:
+          type: number
+          nullable: true
+        bandwidthUsed:
+          type: number
+        bandwidthLimit:
+          type: number
+        connectedClients:
+          type: integer
+        maxClients:
+          type: integer
+        isPrimary:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - address
+        - port
+        - country
+        - countryFlag
+        - provider
+        - status
+        - bandwidthUsed
+        - bandwidthLimit
+        - connectedClients
+        - maxClients
+        - isPrimary
+        - createdAt
+        - updatedAt
+    CreateServerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        port:
+          type: integer
+          default: 443
+        country:
+          type: string
+        countryFlag:
+          type: string
+        provider:
+          type: string
+        maxClients:
+          type: integer
+          default: 100
+      required:
+        - name
+        - address
+    UpdateServerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        port:
+          type: integer
+        country:
+          type: string
+        countryFlag:
+          type: string
+        provider:
+          type: string
+        maxClients:
+          type: integer
+        status:
+          type: string
+    ClusterStats:
+      type: object
+      properties:
+        totalServers:
+          type: integer
+        onlineServers:
+          type: integer
+        totalClients:
+          type: integer
+        avgPing:
+          type: number
+          nullable: true
+        totalBandwidth:
+          type: number
+      required:
+        - totalServers
+        - onlineServers
+        - totalClients
+        - totalBandwidth

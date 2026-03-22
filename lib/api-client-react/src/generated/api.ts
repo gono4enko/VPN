@@ -18,7 +18,9 @@ import type {
 
 import type {
   AutoSelectResult,
+  ClusterStats,
   CreateProfileRequest,
+  CreateServerRequest,
   CreateUserRequest,
   ErrorResponse,
   HealthStatus,
@@ -35,9 +37,11 @@ import type {
   SpeedtestResult,
   TrafficStats,
   UpdateProfileRequest,
+  UpdateServerRequest,
   UpdateUserRequest,
   VlessUrlResponse,
   VpnProfile,
+  VpnServer,
   VpnUser,
 } from "./api.schemas";
 
@@ -2153,6 +2157,584 @@ export function useGetTrafficStats<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetTrafficStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all servers in cluster
+ */
+export const getListServersUrl = () => {
+  return `/api/cluster/servers`;
+};
+
+export const listServers = async (
+  options?: RequestInit,
+): Promise<VpnServer[]> => {
+  return customFetch<VpnServer[]>(getListServersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListServersQueryKey = () => {
+  return [`/api/cluster/servers`] as const;
+};
+
+export const getListServersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listServers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listServers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListServersQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listServers>>> = ({
+    signal,
+  }) => listServers({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listServers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListServersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listServers>>
+>;
+export type ListServersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all servers in cluster
+ */
+
+export function useListServers<
+  TData = Awaited<ReturnType<typeof listServers>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listServers>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListServersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Add server to cluster
+ */
+export const getCreateServerUrl = () => {
+  return `/api/cluster/servers`;
+};
+
+export const createServer = async (
+  createServerRequest: CreateServerRequest,
+  options?: RequestInit,
+): Promise<VpnServer> => {
+  return customFetch<VpnServer>(getCreateServerUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createServerRequest),
+  });
+};
+
+export const getCreateServerMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createServer>>,
+    TError,
+    { data: BodyType<CreateServerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createServer>>,
+  TError,
+  { data: BodyType<CreateServerRequest> },
+  TContext
+> => {
+  const mutationKey = ["createServer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createServer>>,
+    { data: BodyType<CreateServerRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createServer(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateServerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createServer>>
+>;
+export type CreateServerMutationBody = BodyType<CreateServerRequest>;
+export type CreateServerMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Add server to cluster
+ */
+export const useCreateServer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createServer>>,
+    TError,
+    { data: BodyType<CreateServerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createServer>>,
+  TError,
+  { data: BodyType<CreateServerRequest> },
+  TContext
+> => {
+  return useMutation(getCreateServerMutationOptions(options));
+};
+
+/**
+ * @summary Update server details
+ */
+export const getUpdateServerUrl = (id: number) => {
+  return `/api/cluster/servers/${id}`;
+};
+
+export const updateServer = async (
+  id: number,
+  updateServerRequest: UpdateServerRequest,
+  options?: RequestInit,
+): Promise<VpnServer> => {
+  return customFetch<VpnServer>(getUpdateServerUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateServerRequest),
+  });
+};
+
+export const getUpdateServerMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateServer>>,
+    TError,
+    { id: number; data: BodyType<UpdateServerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateServer>>,
+  TError,
+  { id: number; data: BodyType<UpdateServerRequest> },
+  TContext
+> => {
+  const mutationKey = ["updateServer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateServer>>,
+    { id: number; data: BodyType<UpdateServerRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateServer(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateServerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateServer>>
+>;
+export type UpdateServerMutationBody = BodyType<UpdateServerRequest>;
+export type UpdateServerMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update server details
+ */
+export const useUpdateServer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateServer>>,
+    TError,
+    { id: number; data: BodyType<UpdateServerRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateServer>>,
+  TError,
+  { id: number; data: BodyType<UpdateServerRequest> },
+  TContext
+> => {
+  return useMutation(getUpdateServerMutationOptions(options));
+};
+
+/**
+ * @summary Remove server from cluster
+ */
+export const getDeleteServerUrl = (id: number) => {
+  return `/api/cluster/servers/${id}`;
+};
+
+export const deleteServer = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteServerUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteServerMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteServer>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteServer>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteServer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteServer>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteServer(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteServerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteServer>>
+>;
+
+export type DeleteServerMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Remove server from cluster
+ */
+export const useDeleteServer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteServer>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteServer>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteServerMutationOptions(options));
+};
+
+/**
+ * @summary Ping a server
+ */
+export const getPingServerUrl = (id: number) => {
+  return `/api/cluster/servers/${id}/ping`;
+};
+
+export const pingServer = async (
+  id: number,
+  options?: RequestInit,
+): Promise<VpnServer> => {
+  return customFetch<VpnServer>(getPingServerUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getPingServerQueryKey = (id: number) => {
+  return [`/api/cluster/servers/${id}/ping`] as const;
+};
+
+export const getPingServerQueryOptions = <
+  TData = Awaited<ReturnType<typeof pingServer>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof pingServer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getPingServerQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof pingServer>>> = ({
+    signal,
+  }) => pingServer(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof pingServer>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type PingServerQueryResult = NonNullable<
+  Awaited<ReturnType<typeof pingServer>>
+>;
+export type PingServerQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Ping a server
+ */
+
+export function usePingServer<
+  TData = Awaited<ReturnType<typeof pingServer>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof pingServer>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getPingServerQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Set server as primary
+ */
+export const getSetPrimaryServerUrl = (id: number) => {
+  return `/api/cluster/servers/${id}/set-primary`;
+};
+
+export const setPrimaryServer = async (
+  id: number,
+  options?: RequestInit,
+): Promise<VpnServer> => {
+  return customFetch<VpnServer>(getSetPrimaryServerUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getSetPrimaryServerMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setPrimaryServer>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setPrimaryServer>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["setPrimaryServer"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setPrimaryServer>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return setPrimaryServer(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetPrimaryServerMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setPrimaryServer>>
+>;
+
+export type SetPrimaryServerMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Set server as primary
+ */
+export const useSetPrimaryServer = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setPrimaryServer>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof setPrimaryServer>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getSetPrimaryServerMutationOptions(options));
+};
+
+/**
+ * @summary Get cluster statistics
+ */
+export const getGetClusterStatsUrl = () => {
+  return `/api/cluster/stats`;
+};
+
+export const getClusterStats = async (
+  options?: RequestInit,
+): Promise<ClusterStats> => {
+  return customFetch<ClusterStats>(getGetClusterStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetClusterStatsQueryKey = () => {
+  return [`/api/cluster/stats`] as const;
+};
+
+export const getGetClusterStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getClusterStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getClusterStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetClusterStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getClusterStats>>> = ({
+    signal,
+  }) => getClusterStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getClusterStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetClusterStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getClusterStats>>
+>;
+export type GetClusterStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get cluster statistics
+ */
+
+export function useGetClusterStats<
+  TData = Awaited<ReturnType<typeof getClusterStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getClusterStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetClusterStatsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

@@ -7,7 +7,9 @@
  */
 
 export * from "./autoSelectResult";
+export * from "./clusterStats";
 export * from "./createProfileRequest";
+export * from "./createServerRequest";
 export * from "./createUserRequest";
 export * from "./errorResponse";
 export * from "./healthStatus";
@@ -25,7 +27,10 @@ export * from "./speedtestResult";
 export * from "./trafficPoint";
 export * from "./trafficStats";
 export * from "./updateProfileRequest";
+export * from "./updateServerRequest";
 export * from "./updateUserRequest";
 export * from "./vlessUrlResponse";
 export * from "./vpnProfile";
+export * from "./vpnServer";
+export * from "./vpnServerStatus";
 export * from "./vpnUser";

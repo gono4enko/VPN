@@ -398,3 +398,157 @@ export const GetTrafficStatsResponse = zod.object({
   totalIn: zod.number(),
   totalOut: zod.number(),
 });
+
+/**
+ * @summary List all servers in cluster
+ */
+export const ListServersResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  address: zod.string(),
+  port: zod.number(),
+  country: zod.string(),
+  countryFlag: zod.string(),
+  provider: zod.string(),
+  status: zod.enum(["online", "offline", "maintenance"]),
+  lastPing: zod.number().nullish(),
+  cpuUsage: zod.number().nullish(),
+  memUsage: zod.number().nullish(),
+  bandwidthUsed: zod.number(),
+  bandwidthLimit: zod.number(),
+  connectedClients: zod.number(),
+  maxClients: zod.number(),
+  isPrimary: zod.boolean(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListServersResponse = zod.array(ListServersResponseItem);
+
+/**
+ * @summary Add server to cluster
+ */
+export const createServerBodyPortDefault = 443;
+export const createServerBodyMaxClientsDefault = 100;
+
+export const CreateServerBody = zod.object({
+  name: zod.string(),
+  address: zod.string(),
+  port: zod.number().default(createServerBodyPortDefault),
+  country: zod.string().optional(),
+  countryFlag: zod.string().optional(),
+  provider: zod.string().optional(),
+  maxClients: zod.number().default(createServerBodyMaxClientsDefault),
+});
+
+/**
+ * @summary Update server details
+ */
+export const UpdateServerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateServerBody = zod.object({
+  name: zod.string().optional(),
+  address: zod.string().optional(),
+  port: zod.number().optional(),
+  country: zod.string().optional(),
+  countryFlag: zod.string().optional(),
+  provider: zod.string().optional(),
+  maxClients: zod.number().optional(),
+  status: zod.string().optional(),
+});
+
+export const UpdateServerResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  address: zod.string(),
+  port: zod.number(),
+  country: zod.string(),
+  countryFlag: zod.string(),
+  provider: zod.string(),
+  status: zod.enum(["online", "offline", "maintenance"]),
+  lastPing: zod.number().nullish(),
+  cpuUsage: zod.number().nullish(),
+  memUsage: zod.number().nullish(),
+  bandwidthUsed: zod.number(),
+  bandwidthLimit: zod.number(),
+  connectedClients: zod.number(),
+  maxClients: zod.number(),
+  isPrimary: zod.boolean(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Remove server from cluster
+ */
+export const DeleteServerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Ping a server
+ */
+export const PingServerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const PingServerResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  address: zod.string(),
+  port: zod.number(),
+  country: zod.string(),
+  countryFlag: zod.string(),
+  provider: zod.string(),
+  status: zod.enum(["online", "offline", "maintenance"]),
+  lastPing: zod.number().nullish(),
+  cpuUsage: zod.number().nullish(),
+  memUsage: zod.number().nullish(),
+  bandwidthUsed: zod.number(),
+  bandwidthLimit: zod.number(),
+  connectedClients: zod.number(),
+  maxClients: zod.number(),
+  isPrimary: zod.boolean(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Set server as primary
+ */
+export const SetPrimaryServerParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SetPrimaryServerResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  address: zod.string(),
+  port: zod.number(),
+  country: zod.string(),
+  countryFlag: zod.string(),
+  provider: zod.string(),
+  status: zod.enum(["online", "offline", "maintenance"]),
+  lastPing: zod.number().nullish(),
+  cpuUsage: zod.number().nullish(),
+  memUsage: zod.number().nullish(),
+  bandwidthUsed: zod.number(),
+  bandwidthLimit: zod.number(),
+  connectedClients: zod.number(),
+  maxClients: zod.number(),
+  isPrimary: zod.boolean(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary Get cluster statistics
+ */
+export const GetClusterStatsResponse = zod.object({
+  totalServers: zod.number(),
+  onlineServers: zod.number(),
+  totalClients: zod.number(),
+  avgPing: zod.number().nullish(),
+  totalBandwidth: zod.number(),
+});
