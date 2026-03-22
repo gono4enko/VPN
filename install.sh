@@ -181,7 +181,7 @@ ensure_postgres() {
 ensure_postgres
 
 ensure_xray() {
-  if command_exists xray; then
+  if command -v xray &>/dev/null; then
     ok "Xray найден: $(xray version 2>/dev/null | head -1)"
     return
   fi
@@ -193,7 +193,7 @@ ensure_xray() {
     bash -c "$(curl -fsSL https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
   fi
 
-  if command_exists xray; then
+  if command -v xray &>/dev/null; then
     ok "Xray установлен: $(xray version 2>/dev/null | head -1)"
   else
     warn "Не удалось установить Xray автоматически. Установите вручную: https://github.com/XTLS/Xray-core"
